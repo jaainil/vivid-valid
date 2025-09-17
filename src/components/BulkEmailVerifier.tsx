@@ -4,8 +4,18 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { EmailResult } from "@/pages/Index";
-import { simulateEmailVerification } from "@/lib/emailValidation";
-import { Upload, FileText, Loader2, CheckCircle, XCircle, AlertTriangle, Download } from "lucide-react";
+import { validateEmailBulk } from "@/lib/emailValidation";
+import {
+  Upload,
+  FileText,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Download,
+  ToggleLeft,
+  ToggleRight,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface BulkEmailVerifierProps {
@@ -22,24 +32,35 @@ interface BulkProgress {
 
 export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState<BulkProgress>({ total: 0, processed: 0, valid: 0, invalid: 0, risky: 0 });
+  const [progress, setProgress] = useState<BulkProgress>({
+    total: 0,
+    processed: 0,
+    valid: 0,
+    invalid: 0,
+    risky: 0,
+  });
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [currentBatch, setCurrentBatch] = useState<EmailResult[]>([]);
+  const [useStrictMode, setUseStrictMode] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const parseEmailsFromFile = async (file: File): Promise<string[]> => {
     const text = await file.text();
     const emails: string[] = [];
-    
-    if (file.name.endsWith('.csv')) {
+
+    if (file.name.endsWith(".csv")) {
       // Parse CSV - assume emails are in first column or any column
-      const lines = text.split('\n');
-      lines.forEach(line => {
-        const columns = line.split(',').map(col => col.trim().replace(/['"]/g, ''));
-        columns.forEach(col => {
-          const emailMatch = col.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      const lines = text.split("\n");
+      lines.forEach((line) => {
+        const columns = line
+          .split(",")
+          .map((col) => col.trim().replace(/['"]/g, ""));
+        columns.forEach((col) => {
+          const emailMatch = col.match(
+            /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
+          );
           if (emailMatch) {
             emails.push(emailMatch[0]);
           }
@@ -58,57 +79,85 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
     return [...new Set(emails)];
   };
 
-  const simulateBulkVerification = async (emails: string[]): Promise<EmailResult[]> => {
-    const results: EmailResult[] = [];
-    const batchSize = 5; // Process in small batches for demo
-    
-    setProgress({ total: emails.length, processed: 0, valid: 0, invalid: 0, risky: 0 });
-    
-    for (let i = 0; i < emails.length; i += batchSize) {
-      const batch = emails.slice(i, i + batchSize);
-      
-      // Process batch
-      for (const email of batch) {
-        await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
-        
-        // Get full analysis for each email
-        const analysis = await simulateEmailVerification(email);
-        
-        const result: EmailResult = {
-          id: Math.random().toString(36).substr(2, 9),
-          email,
-          status: analysis.status,
-          reason: analysis.reason,
-          timestamp: Date.now(),
-          score: analysis.score,
-          factors: analysis.factors,
-          suggestions: analysis.suggestions,
-          domainHealth: analysis.domainHealth
-        };
+  const performBulkVerification = async (
+    emails: string[]
+  ): Promise<EmailResult[]> => {
+    setProgress({
+      total: emails.length,
+      processed: 0,
+      valid: 0,
+      invalid: 0,
+      risky: 0,
+    });
 
-        results.push(result);
-        setCurrentBatch(prev => [result, ...prev.slice(0, 9)]); // Show last 10 results
-        
+    try {
+      // Use the real backend API for bulk validation
+      const bulkResult = await validateEmailBulk(emails, {
+        enableCache: true,
+        checkSyntax: true,
+        checkDomain: true,
+        checkMX: true,
+        checkSMTP: false, // Disable SMTP for bulk to avoid overwhelming
+        checkDisposable: true,
+        checkTypos: true,
+        useStrictMode: useStrictMode,
+      });
+
+      // Convert backend results to frontend EmailResult format
+      const results: EmailResult[] = bulkResult.results.map((analysis) => ({
+        id: Math.random().toString(36).substr(2, 9),
+        email: analysis.input, // Backend uses 'input', frontend expects 'email'
+        status: analysis.status === "error" ? "invalid" : analysis.status,
+        reason: analysis.reason,
+        timestamp: Date.now(),
+        score: analysis.score,
+        factors: analysis.factors,
+        suggestions: analysis.suggestion
+          ? [analysis.suggestion]
+          : analysis.suggestions,
+        domainHealth: analysis.domainHealth,
+        // Map strict mode properties
+        normalized_email: analysis.normalized_email,
+        is_role_based: analysis.is_role_based,
+        is_catch_all: analysis.is_catch_all,
+        gmail_normalized: analysis.gmail_normalized,
+        has_plus_alias: analysis.has_plus_alias,
+        checks_performed: analysis.checks_performed,
+      }));
+
+      // Simulate progress updates for better UX
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+        setCurrentBatch((prev) => [result, ...prev.slice(0, 9)]); // Show last 10 results
+
         // Update progress
-        setProgress(prev => ({
+        setProgress((prev) => ({
           total: prev.total,
-          processed: prev.processed + 1,
-          valid: prev.valid + (result.status === 'valid' ? 1 : 0),
-          invalid: prev.invalid + (result.status === 'invalid' ? 1 : 0),
-          risky: prev.risky + (result.status === 'risky' ? 1 : 0),
+          processed: i + 1,
+          valid: prev.valid + (result.status === "valid" ? 1 : 0),
+          invalid: prev.invalid + (result.status === "invalid" ? 1 : 0),
+          risky: prev.risky + (result.status === "risky" ? 1 : 0),
         }));
+
+        // Small delay to show progress
+        if (i < results.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
       }
+
+      return results;
+    } catch (error) {
+      console.error("Bulk validation failed:", error);
+      throw error;
     }
-    
-    return results;
   };
 
   const handleFileSelect = (file: File) => {
-    if (!file.type.includes('csv') && !file.name.endsWith('.txt')) {
+    if (!file.type.includes("csv") && !file.name.endsWith(".txt")) {
       toast({
         title: "Invalid File Type",
         description: "Please upload a CSV or TXT file",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -123,7 +172,7 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     const file = e.dataTransfer.files[0];
     if (file) {
       handleFileSelect(file);
@@ -142,22 +191,22 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
       toast({
         title: "No File Selected",
         description: "Please upload a CSV or TXT file first",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setIsProcessing(true);
     setCurrentBatch([]);
-    
+
     try {
       const emails = await parseEmailsFromFile(uploadedFile);
-      
+
       if (emails.length === 0) {
         toast({
           title: "No Emails Found",
           description: "No valid email addresses found in the uploaded file",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
@@ -167,19 +216,40 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
         description: `Found ${emails.length} emails to verify`,
       });
 
-      const results = await simulateBulkVerification(emails);
+      const results = await performBulkVerification(emails);
       onResults(results);
-      
+
       toast({
         title: "Bulk Verification Complete",
         description: `Processed ${results.length} emails successfully`,
       });
-      
     } catch (error) {
+      console.error("Bulk validation failed:", error);
+
+      let errorMessage = "An error occurred while processing the file";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+
+        // Check for specific error types
+        if (errorMessage.includes("Cannot connect to backend server")) {
+          errorMessage =
+            "Cannot connect to backend server. Please ensure the backend is running.";
+        } else if (errorMessage.includes("Network error")) {
+          errorMessage =
+            "Network error. Please check your internet connection.";
+        } else if (errorMessage.includes("Too many validation requests")) {
+          errorMessage =
+            "Rate limit exceeded. Please wait a moment before trying again.";
+        } else if (errorMessage.includes("Maximum 1000 emails")) {
+          errorMessage =
+            "File contains too many emails. Maximum 1000 emails allowed per batch.";
+        }
+      }
+
       toast({
         title: "Processing Failed",
-        description: "An error occurred while processing the file",
-        variant: "destructive"
+        description: errorMessage,
+        variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
@@ -188,51 +258,105 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
 
   const downloadResults = () => {
     if (currentBatch.length === 0) return;
-    
+
     const csv = [
-      'Email,Status,Reason,Timestamp',
-      ...currentBatch.map(result => 
-        `${result.email},${result.status},${result.reason},${new Date(result.timestamp).toISOString()}`
-      )
-    ].join('\n');
-    
-    const blob = new Blob([csv], { type: 'text/csv' });
+      "Email,Status,Reason,Timestamp",
+      ...currentBatch.map(
+        (result) =>
+          `${result.email},${result.status},${result.reason},${new Date(
+            result.timestamp
+          ).toISOString()}`
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `verification-results-${Date.now()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const progressPercentage = progress.total > 0 ? (progress.processed / progress.total) * 100 : 0;
+  const progressPercentage =
+    progress.total > 0 ? (progress.processed / progress.total) * 100 : 0;
 
   return (
     <div className="space-y-6">
+      {/* Strict Mode Toggle */}
+      <div className="flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <span
+            className={`text-sm font-medium ${
+              !useStrictMode ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            Standard Mode
+          </span>
+          <button
+            onClick={() => setUseStrictMode(!useStrictMode)}
+            className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isProcessing}
+          >
+            <span className="sr-only">Toggle strict mode</span>
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                useStrictMode ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+          <span
+            className={`text-sm font-medium ${
+              useStrictMode ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            Strict Mode
+          </span>
+          {useStrictMode && (
+            <Badge variant="destructive" className="ml-2">
+              MAX SECURITY
+            </Badge>
+          )}
+        </div>
+      </div>
+
       {/* File Upload Zone */}
-      <Card 
+      <Card
         className={`glass-card p-8 border-2 border-dashed transition-all duration-300 cursor-pointer ${
-          isDragOver ? 'drop-zone-active' : 'border-border hover:border-primary/50'
+          isDragOver
+            ? "drop-zone-active"
+            : "border-border hover:border-primary/50"
         }`}
-        onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragOver(true);
+        }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
       >
         <div className="text-center space-y-4">
           <div className="flex justify-center">
-            <Upload className={`h-12 w-12 ${isDragOver ? 'text-primary animate-bounce' : 'text-muted-foreground'}`} />
+            <Upload
+              className={`h-12 w-12 ${
+                isDragOver
+                  ? "text-primary animate-bounce"
+                  : "text-muted-foreground"
+              }`}
+            />
           </div>
-          
+
           <div>
             <h3 className="text-lg font-semibold mb-2">
-              {uploadedFile ? uploadedFile.name : 'Drop your file here or click to browse'}
+              {uploadedFile
+                ? uploadedFile.name
+                : "Drop your file here or click to browse"}
             </h3>
             <p className="text-sm text-muted-foreground">
               Supports CSV and TXT files with email addresses
             </p>
           </div>
-          
+
           {uploadedFile && (
             <div className="flex items-center justify-center gap-2 text-sm text-success">
               <FileText className="h-4 w-4" />
@@ -240,7 +364,7 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
             </div>
           )}
         </div>
-        
+
         <input
           ref={fileInputRef}
           type="file"
@@ -252,7 +376,7 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
 
       {/* Start Processing Button */}
       <div className="flex justify-center">
-        <Button 
+        <Button
           onClick={startBulkVerification}
           disabled={!uploadedFile || isProcessing}
           className="btn-hero px-8 py-3"
@@ -264,7 +388,7 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
               Processing...
             </>
           ) : (
-            'Start Bulk Verification'
+            "Start Bulk Verification"
           )}
         </Button>
       </div>
@@ -279,24 +403,32 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
                 {progress.processed} / {progress.total}
               </span>
             </div>
-            
+
             <Progress value={progressPercentage} className="progress-glow" />
-            
+
             <div className="grid grid-cols-4 gap-4 text-center">
               <div className="space-y-1">
-                <div className="text-2xl font-bold text-muted-foreground">{progress.processed}</div>
+                <div className="text-2xl font-bold text-muted-foreground">
+                  {progress.processed}
+                </div>
                 <div className="text-xs text-muted-foreground">Processed</div>
               </div>
               <div className="space-y-1">
-                <div className="text-2xl font-bold text-success">{progress.valid}</div>
+                <div className="text-2xl font-bold text-success">
+                  {progress.valid}
+                </div>
                 <div className="text-xs text-muted-foreground">Valid</div>
               </div>
               <div className="space-y-1">
-                <div className="text-2xl font-bold text-warning">{progress.risky}</div>
+                <div className="text-2xl font-bold text-warning">
+                  {progress.risky}
+                </div>
                 <div className="text-xs text-muted-foreground">Risky</div>
               </div>
               <div className="space-y-1">
-                <div className="text-2xl font-bold text-destructive">{progress.invalid}</div>
+                <div className="text-2xl font-bold text-destructive">
+                  {progress.invalid}
+                </div>
                 <div className="text-xs text-muted-foreground">Invalid</div>
               </div>
             </div>
@@ -314,22 +446,32 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
               Export Results
             </Button>
           </div>
-          
+
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {currentBatch.map((result) => (
-              <div 
+              <div
                 key={result.id}
                 className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 animate-slide-up"
               >
-                {result.status === 'valid' && <CheckCircle className="h-4 w-4 text-success" />}
-                {result.status === 'invalid' && <XCircle className="h-4 w-4 text-destructive" />}
-                {result.status === 'risky' && <AlertTriangle className="h-4 w-4 text-warning" />}
-                
+                {result.status === "valid" && (
+                  <CheckCircle className="h-4 w-4 text-success" />
+                )}
+                {result.status === "invalid" && (
+                  <XCircle className="h-4 w-4 text-destructive" />
+                )}
+                {result.status === "risky" && (
+                  <AlertTriangle className="h-4 w-4 text-warning" />
+                )}
+
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">{result.email}</div>
-                  <div className="text-xs text-muted-foreground">{result.reason}</div>
+                  <div className="font-medium text-sm truncate">
+                    {result.email}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {result.reason}
+                  </div>
                 </div>
-                
+
                 <Badge className={`status-${result.status} border text-xs`}>
                   {result.status.toUpperCase()}
                 </Badge>

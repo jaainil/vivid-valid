@@ -1,0 +1,54 @@
+# World's Most Accurate Email Validator - Test Cases
+
+# Valid Emails
+john.doe@gmail.com
+jane.smith@outlook.com
+test.user@yahoo.com
+user123@hotmail.com
+admin@company.org
+support@example.com
+
+# Common Typos (Should detect and suggest corrections)
+user@gmai.com
+test@yahoo.con
+admin@hotmail.co
+support@outlok.com
+john@gmial.com
+
+# Invalid Formats
+invalid-email
+@gmail.com
+user@
+user@.com
+user..double@gmail.com
+user@domain@extra.com
+
+# Disposable Email Providers
+test@10minutemail.com
+user@tempmail.org
+admin@guerrillamail.com
+fake@mailinator.com
+temp@yopmail.com
+
+# Internationalized Domains (IDN)
+user@münchen.de
+test@café.fr
+admin@тест.com
+
+# Edge Cases
+"quoted.user"@example.com
+user+tag@gmail.com
+very.long.email.address.that.might.cause.issues@very-long-domain-name-that-tests-limits.example.com
+user@subdomain.example.com
+123@456.789
+
+# Role-based emails
+admin@company.com
+support@business.org
+noreply@service.com
+info@organization.net
+
+# Suspicious patterns
+test123456@temp-domain.tk
+user@suspicious-domain.ml
+fake@new-domain.ga
