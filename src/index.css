@@ -2,41 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Email Verifier Design System - Modern, Professional, Animated */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core Brand Colors - Professional Blue & Green Palette */
+    --background: 220 25% 4%;
+    --foreground: 220 12% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 220 20% 8%;
+    --card-foreground: 220 12% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 220 20% 8%;
+    --popover-foreground: 220 12% 95%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Electric Blue */
+    --primary: 217 91% 60%;
+    --primary-foreground: 220 25% 4%;
+    --primary-glow: 217 91% 70%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Deep Purple */
+    --secondary: 250 60% 25%;
+    --secondary-foreground: 220 12% 95%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Success - Emerald Green */
+    --success: 142 76% 36%;
+    --success-foreground: 220 25% 4%;
+    --success-glow: 142 76% 50%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Warning - Amber */
+    --warning: 43 96% 56%;
+    --warning-foreground: 220 25% 4%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Error - Red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 220 12% 95%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --muted: 220 15% 15%;
+    --muted-foreground: 220 10% 60%;
 
-    --radius: 0.5rem;
+    --accent: 217 91% 60%;
+    --accent-foreground: 220 25% 4%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 12%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.75rem;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(var(--success-glow)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(250 60% 25%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(220 15% 10%) 100%);
+
+    /* Shadows & Effects */
+    --shadow-glow: 0 0 40px hsl(var(--primary) / 0.3);
+    --shadow-success: 0 0 30px hsl(var(--success) / 0.4);
+    --shadow-card: 0 10px 30px -10px hsl(220 25% 4% / 0.5);
+
+    /* Animation Variables */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* Verification Status Colors */
+    --status-checking: 43 96% 56%;
+    --status-valid: 142 76% 36%;
+    --status-invalid: 0 84% 60%;
+    --status-risky: 28 96% 56%;
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +133,144 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    background: var(--gradient-hero);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* Hero Button Variants */
+  .btn-hero {
+    @apply bg-gradient-to-r from-primary to-primary-glow text-primary-foreground shadow-[var(--shadow-glow)] hover:shadow-[var(--shadow-success)] transition-all duration-300 hover:scale-105;
+  }
+
+  .btn-success {
+    @apply bg-gradient-to-r from-success to-success-glow text-success-foreground shadow-[var(--shadow-success)];
+  }
+
+  /* Status Indicators */
+  .status-checking {
+    @apply bg-warning/20 text-warning border-warning/30;
+  }
+
+  .status-valid {
+    @apply bg-success/20 text-success border-success/30;
+  }
+
+  .status-invalid {
+    @apply bg-destructive/20 text-destructive border-destructive/30;
+  }
+
+  .status-risky {
+    @apply bg-orange-500/20 text-orange-400 border-orange-500/30;
+  }
+
+  /* Animated Progress Bar */
+  .progress-glow {
+    background: var(--gradient-primary);
+    box-shadow: var(--shadow-glow);
+    animation: pulse-glow 2s infinite;
+  }
+
+  /* Glass Morphism Cards */
+  .glass-card {
+    background: var(--gradient-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Verification Step Animation */
+  .step-pulse {
+    animation: step-pulse 1.5s infinite;
+  }
+
+  /* File Drop Zone */
+  .drop-zone-active {
+    background: var(--gradient-primary);
+    border-color: hsl(var(--primary));
+    box-shadow: var(--shadow-glow);
+    transform: scale(1.02);
+  }
+}
+
+@layer utilities {
+  /* Animation Keyframes */
+  @keyframes pulse-glow {
+    0%, 100% { 
+      opacity: 1;
+      box-shadow: var(--shadow-glow);
+    }
+    50% { 
+      opacity: 0.8;
+      box-shadow: 0 0 60px hsl(var(--primary) / 0.5);
+    }
+  }
+
+  @keyframes step-pulse {
+    0%, 100% { 
+      opacity: 0.6; 
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 1; 
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes verification-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes bounce-in {
+    0% { 
+      opacity: 0; 
+      transform: scale(0.3); 
+    }
+    50% { 
+      opacity: 1; 
+      transform: scale(1.05);
+    }
+    70% { 
+      transform: scale(0.9); 
+    }
+    100% { 
+      opacity: 1; 
+      transform: scale(1); 
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Utility Classes */
+  .animate-verification-spin {
+    animation: verification-spin 1s linear infinite;
+  }
+
+  .animate-bounce-in {
+    animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.4s ease-out;
+  }
+
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+
+  .transition-bounce {
+    transition: var(--transition-bounce);
   }
 }
