@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, Zap, CheckCircle, Users } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export interface EmailResult {
   id: string;
@@ -13,6 +14,23 @@ export interface EmailResult {
   status: 'valid' | 'invalid' | 'risky' | 'checking';
   reason: string;
   timestamp: number;
+  score: number;
+  factors: {
+    format: boolean;
+    domain: boolean;
+    mx: boolean;
+    smtp: boolean;
+    reputation: number;
+    deliverability: number;
+  };
+  suggestions?: string[];
+  domainHealth: {
+    spf: boolean;
+    dkim: boolean;
+    dmarc: boolean;
+    blacklisted: boolean;
+    reputation: number;
+  };
 }
 
 const Index = () => {
@@ -33,8 +51,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-background">
+      {/* Header with Theme Toggle */}
+      <div className="container mx-auto px-4 pt-6">
+        <div className="flex justify-end mb-6">
+          <ThemeToggle />
+        </div>
+      </div>
+
       {/* Hero Section */}
-      <div className="container mx-auto px-4 pt-12 pb-8">
+      <div className="container mx-auto px-4 pb-8">
         <div className="text-center mb-12 animate-slide-up">
           <div className="flex items-center justify-center mb-6">
             <div className="p-4 rounded-full glass-card animate-bounce-in">

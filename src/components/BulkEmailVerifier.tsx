@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { EmailResult } from "@/pages/Index";
+import { simulateEmailVerification } from "@/lib/emailValidation";
 import { Upload, FileText, Loader2, CheckCircle, XCircle, AlertTriangle, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -70,33 +71,19 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
       for (const email of batch) {
         await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
         
-        // Mock verification logic
-        let status: EmailResult['status'];
-        let reason: string;
-
-        if (!email.includes('@') || !email.includes('.')) {
-          status = 'invalid';
-          reason = 'Invalid format';
-        } else if (email.includes('test') || email.includes('fake') || email.includes('example')) {
-          status = 'invalid';
-          reason = 'Test email';
-        } else if (email.includes('info@') || email.includes('admin@') || email.includes('support@')) {
-          status = 'risky';
-          reason = 'Role-based';
-        } else if (Math.random() > 0.3) {
-          status = 'valid';
-          reason = 'SMTP verified';
-        } else {
-          status = Math.random() > 0.5 ? 'risky' : 'invalid';
-          reason = status === 'risky' ? 'Uncertain domain' : 'SMTP failed';
-        }
-
+        // Get full analysis for each email
+        const analysis = await simulateEmailVerification(email);
+        
         const result: EmailResult = {
           id: Math.random().toString(36).substr(2, 9),
           email,
-          status,
-          reason,
-          timestamp: Date.now()
+          status: analysis.status,
+          reason: analysis.reason,
+          timestamp: Date.now(),
+          score: analysis.score,
+          factors: analysis.factors,
+          suggestions: analysis.suggestions,
+          domainHealth: analysis.domainHealth
         };
 
         results.push(result);
@@ -106,9 +93,9 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
         setProgress(prev => ({
           total: prev.total,
           processed: prev.processed + 1,
-          valid: prev.valid + (status === 'valid' ? 1 : 0),
-          invalid: prev.invalid + (status === 'invalid' ? 1 : 0),
-          risky: prev.risky + (status === 'risky' ? 1 : 0),
+          valid: prev.valid + (result.status === 'valid' ? 1 : 0),
+          invalid: prev.invalid + (result.status === 'invalid' ? 1 : 0),
+          risky: prev.risky + (result.status === 'risky' ? 1 : 0),
         }));
       }
     }

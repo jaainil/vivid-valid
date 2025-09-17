@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { EmailResult } from "@/pages/Index";
-import { CheckCircle, XCircle, AlertTriangle, Search, Download, Filter } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Search, Download, Filter, Shield, Activity, Zap } from "lucide-react";
 
 interface VerificationResultsProps {
   results: EmailResult[];
@@ -46,9 +46,9 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
       filteredResults;
     
     const csv = [
-      'Email,Status,Reason,Timestamp',
+      'Email,Status,Reason,Score,Format,Domain,MX,SMTP,Reputation,Deliverability,SPF,DKIM,DMARC,Blacklisted,Timestamp',
       ...dataToDownload.map(result => 
-        `${result.email},${result.status},${result.reason},${new Date(result.timestamp).toISOString()}`
+        `${result.email},${result.status},${result.reason},${result.score || 0},${result.factors?.format || false},${result.factors?.domain || false},${result.factors?.mx || false},${result.factors?.smtp || false},${result.factors?.reputation || 0},${result.factors?.deliverability || 0},${result.domainHealth?.spf || false},${result.domainHealth?.dkim || false},${result.domainHealth?.dmarc || false},${result.domainHealth?.blacklisted || false},${new Date(result.timestamp).toISOString()}`
       )
     ].join('\n');
     
@@ -165,23 +165,82 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
                   key={result.id}
                   className="p-4 hover:bg-muted/10 transition-colors animate-slide-up"
                 >
-                  <div className="flex items-center gap-4">
-                    {getStatusIcon(result.status)}
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{result.email}</div>
-                      <div className="text-sm text-muted-foreground">{result.reason}</div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <Badge className={`status-${result.status} border text-xs`}>
-                        {result.status.toUpperCase()}
-                      </Badge>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-4">
+                      {getStatusIcon(result.status)}
                       
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(result.timestamp).toLocaleTimeString()}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{result.email}</div>
+                        <div className="text-sm text-muted-foreground">{result.reason}</div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        {result.score !== undefined && (
+                          <div className="flex items-center gap-1">
+                            <Shield className="h-3 w-3 text-primary" />
+                            <span className="text-sm font-medium">{result.score}/100</span>
+                          </div>
+                        )}
+                        
+                        <Badge className={`status-${result.status} border text-xs`}>
+                          {result.status.toUpperCase()}
+                        </Badge>
+                        
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(result.timestamp).toLocaleTimeString()}
+                        </div>
                       </div>
                     </div>
+
+                    {/* Advanced Details */}
+                    {result.factors && (
+                      <div className="pl-8 space-y-2">
+                        {/* Verification Factors */}
+                        <div className="flex items-center gap-4 text-xs">
+                          <div className={`flex items-center gap-1 ${result.factors.format ? 'text-success' : 'text-destructive'}`}>
+                            <CheckCircle className="h-3 w-3" />
+                            Format
+                          </div>
+                          <div className={`flex items-center gap-1 ${result.factors.domain ? 'text-success' : 'text-destructive'}`}>
+                            <CheckCircle className="h-3 w-3" />
+                            Domain
+                          </div>
+                          <div className={`flex items-center gap-1 ${result.factors.mx ? 'text-success' : 'text-destructive'}`}>
+                            <CheckCircle className="h-3 w-3" />
+                            MX
+                          </div>
+                          <div className={`flex items-center gap-1 ${result.factors.smtp ? 'text-success' : 'text-destructive'}`}>
+                            <Zap className="h-3 w-3" />
+                            SMTP
+                          </div>
+                        </div>
+
+                        {/* Domain Health */}
+                        {result.domainHealth && (
+                          <div className="flex items-center gap-4 text-xs">
+                            <div className={`flex items-center gap-1 ${result.domainHealth.spf ? 'text-success' : 'text-muted-foreground'}`}>
+                              SPF: {result.domainHealth.spf ? '✓' : '✗'}
+                            </div>
+                            <div className={`flex items-center gap-1 ${result.domainHealth.dkim ? 'text-success' : 'text-muted-foreground'}`}>
+                              DKIM: {result.domainHealth.dkim ? '✓' : '✗'}
+                            </div>
+                            <div className={`flex items-center gap-1 ${result.domainHealth.dmarc ? 'text-success' : 'text-muted-foreground'}`}>
+                              DMARC: {result.domainHealth.dmarc ? '✓' : '✗'}
+                            </div>
+                            {result.domainHealth.blacklisted && (
+                              <Badge variant="destructive" className="text-xs">Blacklisted</Badge>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Suggestions */}
+                        {result.suggestions && result.suggestions.length > 0 && (
+                          <div className="text-xs text-warning">
+                            💡 {result.suggestions[0]}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
