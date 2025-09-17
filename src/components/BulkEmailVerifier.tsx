@@ -13,6 +13,8 @@ import {
   XCircle,
   AlertTriangle,
   Download,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -40,6 +42,7 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [currentBatch, setCurrentBatch] = useState<EmailResult[]>([]);
+  const [useStrictMode, setUseStrictMode] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -97,6 +100,7 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
         checkSMTP: false, // Disable SMTP for bulk to avoid overwhelming
         checkDisposable: true,
         checkTypos: true,
+        useStrictMode: useStrictMode,
       });
 
       // Convert backend results to frontend EmailResult format
@@ -112,6 +116,13 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
           ? [analysis.suggestion]
           : analysis.suggestions,
         domainHealth: analysis.domainHealth,
+        // Map strict mode properties
+        normalized_email: analysis.normalized_email,
+        is_role_based: analysis.is_role_based,
+        is_catch_all: analysis.is_catch_all,
+        gmail_normalized: analysis.gmail_normalized,
+        has_plus_alias: analysis.has_plus_alias,
+        checks_performed: analysis.checks_performed,
       }));
 
       // Simulate progress updates for better UX
@@ -272,6 +283,43 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Strict Mode Toggle */}
+      <div className="flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <span
+            className={`text-sm font-medium ${
+              !useStrictMode ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            Standard Mode
+          </span>
+          <button
+            onClick={() => setUseStrictMode(!useStrictMode)}
+            className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isProcessing}
+          >
+            <span className="sr-only">Toggle strict mode</span>
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                useStrictMode ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+          <span
+            className={`text-sm font-medium ${
+              useStrictMode ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            Strict Mode
+          </span>
+          {useStrictMode && (
+            <Badge variant="destructive" className="ml-2">
+              MAX SECURITY
+            </Badge>
+          )}
+        </div>
+      </div>
+
       {/* File Upload Zone */}
       <Card
         className={`glass-card p-8 border-2 border-dashed transition-all duration-300 cursor-pointer ${

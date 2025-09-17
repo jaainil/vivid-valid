@@ -324,7 +324,7 @@ class RFCParser {
     }
 
     // Check for suspicious patterns
-    if (this.options.strictMode) {
+    if (this.options.strictMode || this.options.useStrictMode) {
       // In strict mode, be more restrictive
 
       // No plus addressing in strict mode
@@ -341,6 +341,112 @@ class RFCParser {
           valid: false,
           reason: "Local part contains unusual characters (strict mode)",
         };
+      }
+
+      // Stricter length requirements
+      if (localPart.length < 4) {
+        return { valid: false, reason: "Local part too short (strict mode)" };
+      }
+
+      if (localPart.length > 20) {
+        return { valid: false, reason: "Local part too long (strict mode)" };
+      }
+
+      // No consecutive dots
+      if (localPart.includes("..")) {
+        return {
+          valid: false,
+          reason: "Consecutive dots not allowed (strict mode)",
+        };
+      }
+
+      // No leading or trailing dots
+      if (localPart.startsWith(".") || localPart.endsWith(".")) {
+        return {
+          valid: false,
+          reason: "Local part cannot start or end with dot (strict mode)",
+        };
+      }
+
+      // No consecutive hyphens in domain
+      if (domain.includes("--")) {
+        return {
+          valid: false,
+          reason: "Consecutive hyphens not allowed in domain (strict mode)",
+        };
+      }
+
+      // No leading or trailing hyphens in domain labels
+      const domainLabels = domain.split(".");
+      for (const label of domainLabels) {
+        if (label.startsWith("-") || label.endsWith("-")) {
+          return {
+            valid: false,
+            reason:
+              "Domain label cannot start or end with hyphen (strict mode)",
+          };
+        }
+      }
+
+      // Strict TLD validation
+      const validTLDs = [
+        "com",
+        "org",
+        "net",
+        "edu",
+        "gov",
+        "mil",
+        "int",
+        "biz",
+        "info",
+        "name",
+        "pro",
+        "aero",
+        "coop",
+        "museum",
+        "travel",
+        "jobs",
+        "mobi",
+        "tel",
+        "asia",
+        "cat",
+        "xxx",
+        "post",
+        "geo",
+        "xxx",
+        "app",
+        "dev",
+        "io",
+        "ai",
+        "co",
+        "uk",
+        "us",
+        "ca",
+        "au",
+        "de",
+        "fr",
+        "jp",
+        "cn",
+        "in",
+        "br",
+        "ru",
+        "es",
+        "it",
+        "nl",
+        "se",
+        "no",
+        "dk",
+        "fi",
+        "pl",
+        "tr",
+        "mx",
+        "ar",
+        "za",
+        "nz",
+      ];
+
+      if (!validTLDs.includes(tld.toLowerCase())) {
+        return { valid: false, reason: "Unrecognized TLD (strict mode)" };
       }
     }
 

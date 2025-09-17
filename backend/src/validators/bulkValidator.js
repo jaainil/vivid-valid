@@ -15,6 +15,22 @@ class BulkValidator {
       ...options,
     };
 
+    // If strict mode is enabled, override other options
+    if (this.options.useStrictMode || this.options.strictMode) {
+      this.options.strictMode = true;
+      this.options.enableStrictSMTP = true;
+      this.options.enableDeepDomainAnalysis = true;
+      this.options.enableAdvancedHeuristics = true;
+      this.options.enableRoleBasedDetection = true;
+      this.options.enableGmailNormalization = true;
+      this.options.enableCatchAllDetection = true;
+      this.options.allowQuotedLocal = false;
+      this.options.allowComments = false;
+
+      // Apply stricter scoring thresholds
+      this.options.strictScoring = true;
+    }
+
     this.emailValidator = new EmailValidator(this.options);
   }
 

@@ -21,6 +21,8 @@ import {
   Shield,
   Activity,
   Wand2,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react";
 
 interface SingleEmailVerifierProps {
@@ -34,6 +36,7 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
   const [progress, setProgress] = useState(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [backendStatus, setBackendStatus] = useState<string>("unknown");
+  const [useStrictMode, setUseStrictMode] = useState<boolean>(false);
 
   const steps = [
     "Checking email format...",
@@ -115,7 +118,7 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
       console.log("Starting validation for email:", email);
 
       // Get actual analysis from backend
-      const analysis = await validateEmailReal(email);
+      const analysis = await validateEmailReal(email, { useStrictMode });
 
       console.log("Backend analysis result:", analysis);
 
@@ -141,6 +144,13 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
           : analysis.suggestions,
         domainHealth: analysis.domainHealth,
         timestamp: Date.now(),
+        // Map strict mode properties
+        normalized_email: analysis.normalized_email,
+        is_role_based: analysis.is_role_based,
+        is_catch_all: analysis.is_catch_all,
+        gmail_normalized: analysis.gmail_normalized,
+        has_plus_alias: analysis.has_plus_alias,
+        checks_performed: analysis.checks_performed,
       };
 
       console.log("Final result to display:", finalResult);
@@ -178,7 +188,44 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
           Advanced email verification with reputation scoring and domain health
           analysis
         </p>
-        
+
+        {/* Strict Mode Toggle */}
+        <div className="mt-4 flex items-center justify-center">
+          <div className="flex items-center space-x-2">
+            <span
+              className={`text-sm font-medium ${
+                !useStrictMode ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              Standard Mode
+            </span>
+            <button
+              onClick={() => setUseStrictMode(!useStrictMode)}
+              className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isVerifying}
+            >
+              <span className="sr-only">Toggle strict mode</span>
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  useStrictMode ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+            <span
+              className={`text-sm font-medium ${
+                useStrictMode ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              Strict Mode
+            </span>
+            {useStrictMode && (
+              <Badge variant="destructive" className="ml-2">
+                MAX SECURITY
+              </Badge>
+            )}
+          </div>
+        </div>
+
         {/* Backend Connection Status */}
         <div className="mt-4">
           <Button
@@ -191,16 +238,24 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
           </Button>
           <div className="text-sm">
             Backend Status:{" "}
-            <span className={`font-medium ${
-              backendStatus === "connected" ? "text-green-600" :
-              backendStatus === "failed" ? "text-red-600" :
-              backendStatus === "testing" ? "text-yellow-600" :
-              "text-gray-600"
-            }`}>
-              {backendStatus === "connected" ? "✅ Connected" :
-               backendStatus === "failed" ? "❌ Failed" :
-               backendStatus === "testing" ? "🔄 Testing..." :
-               "❓ Unknown"}
+            <span
+              className={`font-medium ${
+                backendStatus === "connected"
+                  ? "text-green-600"
+                  : backendStatus === "failed"
+                  ? "text-red-600"
+                  : backendStatus === "testing"
+                  ? "text-yellow-600"
+                  : "text-gray-600"
+              }`}
+            >
+              {backendStatus === "connected"
+                ? "✅ Connected"
+                : backendStatus === "failed"
+                ? "❌ Failed"
+                : backendStatus === "testing"
+                ? "🔄 Testing..."
+                : "❓ Unknown"}
             </span>
           </div>
         </div>

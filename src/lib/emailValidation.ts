@@ -33,6 +33,12 @@ export interface EmailAnalysis {
   };
   validation_time: number;
   checks_performed: string[];
+  // Strict mode additional properties
+  normalized_email?: string;
+  is_role_based?: boolean;
+  is_catch_all?: boolean;
+  gmail_normalized?: string;
+  has_plus_alias?: boolean;
 }
 
 export interface ValidationError {
@@ -55,6 +61,7 @@ export interface ValidationOptions {
   smtpTimeout?: number;
   smtpFromDomain?: string;
   enableCache?: boolean;
+  useStrictMode?: boolean;
 }
 
 export interface EmailSuggestion {
