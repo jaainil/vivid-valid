@@ -108,7 +108,9 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
         timestamp: Date.now(),
         score: analysis.score,
         factors: analysis.factors,
-        suggestions: analysis.suggestion ? [analysis.suggestion] : analysis.suggestions,
+        suggestions: analysis.suggestion
+          ? [analysis.suggestion]
+          : analysis.suggestions,
         domainHealth: analysis.domainHealth,
       }));
 
@@ -211,9 +213,31 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
         description: `Processed ${results.length} emails successfully`,
       });
     } catch (error) {
+      console.error("Bulk validation failed:", error);
+
+      let errorMessage = "An error occurred while processing the file";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+
+        // Check for specific error types
+        if (errorMessage.includes("Cannot connect to backend server")) {
+          errorMessage =
+            "Cannot connect to backend server. Please ensure the backend is running.";
+        } else if (errorMessage.includes("Network error")) {
+          errorMessage =
+            "Network error. Please check your internet connection.";
+        } else if (errorMessage.includes("Too many validation requests")) {
+          errorMessage =
+            "Rate limit exceeded. Please wait a moment before trying again.";
+        } else if (errorMessage.includes("Maximum 1000 emails")) {
+          errorMessage =
+            "File contains too many emails. Maximum 1000 emails allowed per batch.";
+        }
+      }
+
       toast({
         title: "Processing Failed",
-        description: "An error occurred while processing the file",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

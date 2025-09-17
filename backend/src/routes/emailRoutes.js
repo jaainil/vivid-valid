@@ -76,8 +76,8 @@ router.post("/validate-bulk", bulkEmailLimiter, async (req, res) => {
       success: true,
       data: {
         total: emails.length,
-        results: results,
-        summary: bulkValidator.getSummary(results),
+        results: results.results,
+        summary: results.summary,
       },
       timestamp: new Date().toISOString(),
     });

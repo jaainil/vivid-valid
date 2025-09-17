@@ -94,6 +94,8 @@ class BulkValidator {
         return result.value;
       } else {
         // Return error result for failed validation
+        const errorMessage =
+          result.reason || result.message || "Unknown validation error";
         return {
           input: emails[index],
           syntax_valid: false,
@@ -105,7 +107,7 @@ class BulkValidator {
           suggestion: null,
           score: 0,
           status: "error",
-          reason: "Validation failed: " + result.reason,
+          reason: "Validation failed: " + errorMessage,
           factors: {
             format: false,
             domain: false,
@@ -123,7 +125,7 @@ class BulkValidator {
           },
           validation_time: 0,
           checks_performed: [],
-          error: result.reason,
+          error: errorMessage,
         };
       }
     });
