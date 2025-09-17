@@ -139,12 +139,12 @@ class DisposableDetector {
 
   async loadDisposableDomains() {
     try {
-      // Try to load from external file if available
+      // Load from the comprehensive GitHub disposable email domains list
       const filePath = path.join(
         __dirname,
         "..",
         "data",
-        "disposable-domains.txt"
+        "disposable_email_blocklist.conf"
       );
 
       try {
@@ -154,14 +154,20 @@ class DisposableDetector {
           .map((line) => line.trim().toLowerCase())
           .filter((line) => line && !line.startsWith("#"));
 
+        // Clear existing domains and load from the comprehensive list
+        this.disposableDomains.clear();
         domains.forEach((domain) => {
           this.disposableDomains.add(domain);
         });
 
-        console.log(`Loaded ${domains.length} disposable domains from file`);
+        console.log(
+          `Loaded ${domains.length} disposable domains from GitHub blocklist`
+        );
       } catch (fileError) {
         // File doesn't exist, use built-in list
-        console.log("Using built-in disposable domains list");
+        console.log(
+          "GitHub blocklist not found, using built-in disposable domains list"
+        );
       }
     } catch (error) {
       console.error("Error loading disposable domains:", error);
