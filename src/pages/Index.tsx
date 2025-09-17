@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 export interface EmailResult {
   id: string;
   email: string;
-  status: 'valid' | 'invalid' | 'risky' | 'checking';
+  status: 'valid' | 'invalid' | 'risky' | 'checking' | 'error';
   reason: string;
   timestamp: number;
   score: number;
