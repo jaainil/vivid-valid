@@ -2,9 +2,11 @@ services:
   frontend:
     # For production deployment, uncomment the image line and comment out the build section
     # image: ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/frontend:latest
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+    # image: ghcr.io/jaainil/vivid-valid/frontend:main-1584f5a
+    # image: ghcr.io/jaainil/vivid-valid/frontend:main-806a61a
+# #     build:
+#       context: .
+#       dockerfile: Dockerfile.frontend
     ports:
       - "8080:80"
     depends_on:
@@ -30,9 +32,13 @@ services:
   backend:
     # For production deployment, uncomment the image line and comment out the build section
     # image: ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/backend:latest
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+#     # image: ghcr.io/jaainil/vivid-valid/frontend:main-1584f5a
+#     # image: ghcr.io/jaainil/vivid-valid/backend:main-1584f5a
+    # image: ghcr.io/jaainil/vivid-valid/frontend:main-806a61a
+    # image: ghcr.io/jaainil/vivid-valid/backend:main-806a61a
+# # # #     build:
+#       context: ./backend
+#       dockerfile: Dockerfile
     ports:
       - "3012:3001"
     environment:
