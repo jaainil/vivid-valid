@@ -1,221 +1,274 @@
-# Deployment Guide for Vercel
+# Vivid Valid - Docker Deployment Guide
 
-This guide will help you deploy your Vivid Valid email validator application to Vercel.
+## Overview
 
-## Prerequisites
+Vivid Valid is a comprehensive email validation platform with a React frontend and Node.js backend, containerized for easy deployment.
 
-1. A Vercel account (sign up at [vercel.com](https://vercel.com))
-2. Your project code pushed to a Git repository (GitHub, GitLab, or Bitbucket)
-3. Node.js installed on your local machine
+## Quick Start
+
+### Prerequisites
+
+- Docker Engine 20.10+
+- Docker Compose 1.29+
+- Git
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/Aexawareinfotech-Pvt-Ltd/vivid-valid.git
+cd vivid-valid
+```
+
+### 2. Deploy with Pre-built Images (Recommended)
+
+```bash
+# Use production-ready images from GitHub Container Registry
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### 3. Access the Application
+
+- Frontend: http://localhost:8080
+- Backend API: http://localhost:3012
 
 ## Deployment Options
 
-### Option 1: Deploy Frontend Only (Recommended)
+### Option 1: Production Deployment (Pre-built Images)
 
-Since your application has a backend that requires Node.js and specific ports, you'll need to deploy the backend separately and the frontend to Vercel.
-
-#### Step 1: Deploy Backend to a Hosting Service
-
-You have several options for hosting your backend:
-
-1. **Render.com** (Recommended for Node.js apps)
-2. **Heroku**
-3. **Railway**
-4. **DigitalOcean App Platform**
-5. **AWS Elastic Beanstalk**
-
-For this example, we'll use Render.com:
-
-1. Sign up at [render.com](https://render.com)
-2. Create a new Node.js service
-3. Connect your Git repository
-4. Configure the service:
-   - Build Command: `cd backend && npm install`
-   - Start Command: `cd backend && node server.js`
-   - Port: 3001
-5. Add environment variables if needed
-
-#### Step 2: Update Frontend API URL
-
-In your frontend code, update the API URL to point to your deployed backend:
-
-```typescript
-// src/lib/emailValidation.ts
-const API_BASE_URL = "https://your-backend-url.onrender.com/api";
+```bash
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
-#### Step 3: Deploy Frontend to Vercel
+### Option 2: Development/Custom Build
 
-1. Push your code to a Git repository
-2. Go to [vercel.com](https://vercel.com) and sign in
-3. Click "New Project"
-4. Import your Git repository
-5. Configure the project:
-   - Framework Preset: Vite
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-   - Install Command: `npm install`
-6. Add environment variables if needed
-7. Click "Deploy"
-
-### Option 2: Full Stack Deployment with Serverless Functions
-
-If you want to deploy everything to Vercel, you'll need to refactor your backend to use Vercel Serverless Functions.
-
-#### Step 1: Restructure Your Project
-
-1. Move your backend API routes to the `api` directory:
-
-   ```
-   api/
-     email/
-       validate.js
-       validate-bulk.js
-       suggest.js
-       domain/
-         [domain]/
-           health.js
-   ```
-
-2. Convert your Express routes to Vercel Serverless Functions
-
-Example for `api/email/validate.js`:
-
-```javascript
-const EmailValidator = require("../../backend/src/validators/emailValidator");
-
-module.exports = async (req, res) => {
-  try {
-    const { email, options = {} } = req.body;
-
-    if (!email) {
-      return res.status(400).json({
-        error: "Email address is required",
-        code: "MISSING_EMAIL",
-      });
-    }
-
-    const validator = new EmailValidator(options);
-    const result = await validator.validate(email);
-
-    res.json({
-      success: true,
-      data: result,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error("Validation error:", error);
-    res.status(500).json({
-      error: "Validation failed",
-      message: error.message,
-      code: "VALIDATION_ERROR",
-    });
-  }
-};
+```bash
+# Build from source
+docker-compose up -d
 ```
 
-#### Step 2: Update vercel.json Configuration
+### Option 3: Specific Version Deployment
 
-Create a `vercel.json` file in your project root:
-
-```json
-{
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
-    }
-  ]
-}
+```bash
+# Deploy specific version
+export VERSION=v1.0.0
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
-#### Step 3: Update Frontend API URL
+## Container Images
 
-Since both frontend and backend will be on the same domain, update the API URL:
+### GitHub Container Registry
 
-```typescript
-// src/lib/emailValidation.ts
-const API_BASE_URL = "/api";
+- Frontend: `ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/frontend:latest`
+- Backend: `ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/backend:latest`
+
+### Available Tags
+
+- `latest` - Latest stable release
+- `main-{sha}` - Latest development build
+- `v{version}` - Specific version release
+
+## Configuration
+
+### Environment Variables
+
+#### Backend
+
+- `NODE_ENV`: Environment (production/development)
+- `PORT`: Server port (default: 3001)
+- `FRONTEND_URL`: Frontend URL
+- `LOG_LEVEL`: Logging level (info/debug/error)
+- `RATE_LIMIT_WINDOW_MS`: Rate limit window in milliseconds
+- `RATE_LIMIT_MAX_REQUESTS`: Maximum requests per window
+
+#### Frontend
+
+- `NGINX_WORKER_PROCESSES`: Nginx worker processes
+- `NGINX_WORKER_CONNECTIONS`: Nginx worker connections
+
+### Health Checks
+
+- Frontend: HTTP check on port 80
+- Backend: HTTP check on `/health` endpoint
+
+## Monitoring
+
+### Container Health
+
+```bash
+# Check container status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# Health check
+docker-compose exec backend wget -q --spider http://localhost:3001/health
 ```
 
-#### Step 4: Deploy to Vercel
+### Resource Usage
 
-1. Push your restructured code to Git
-2. Deploy to Vercel as described in Option 1
+```bash
+# Monitor resource usage
+docker stats
+```
 
-## Environment Variables
+## Scaling
 
-You may need to add environment variables in Vercel:
+### Horizontal Scaling
 
-1. Go to your Vercel project dashboard
-2. Click on "Settings" > "Environment Variables"
-3. Add any required environment variables
+```bash
+# Scale backend instances
+docker-compose up -d --scale backend=3
+```
 
-Common variables for this project:
+### Resource Limits
 
-- `NODE_ENV=production`
-- Any API keys for external services
+Production compose file includes resource limits:
 
-## Post-Deployment Steps
+- CPU: 1 core max, 0.5 core reserved
+- Memory: 512MB max, 256MB reserved
 
-1. **Test Your Application**
+## Security
 
-   - Visit your deployed URL
-   - Test the email validation functionality
-   - Verify that the backend connection is working
+### Container Security
 
-2. **Set Up Custom Domain** (Optional)
+- Non-root user in backend container
+- Minimal base images (Alpine Linux)
+- Regular security updates
 
-   - In Vercel dashboard, go to "Settings" > "Domains"
-   - Add your custom domain and follow the DNS instructions
+### Network Security
 
-3. **Monitor Your Application**
-   - Set up Vercel Analytics for performance monitoring
-   - Configure error tracking if needed
+- Isolated Docker network
+- Internal communication only
+- No external database dependencies
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Backend Connection Errors**
+#### Container Won't Start
 
-   - Verify your backend is deployed and running
-   - Check that the API URL is correct
-   - Ensure CORS is properly configured
+```bash
+# Check logs
+docker-compose logs <service-name>
 
-2. **Build Failures**
+# Check container status
+docker-compose ps
 
-   - Check the build logs in Vercel dashboard
-   - Ensure all dependencies are properly listed in package.json
-   - Verify the build command is correct
+# Restart services
+docker-compose restart
+```
 
-3. **Serverless Function Timeouts**
-   - Vercel has a 10-second timeout for serverless functions
-   - If your email validation takes longer, consider optimizing or using a different approach
+#### Port Conflicts
 
-### Debugging
+```bash
+# Check port usage
+netstat -an | grep :8080
+netstat -an | grep :3012
 
-1. Use Vercel's built-in logging to debug issues
-2. Test locally with `vercel dev` command
-3. Check the Network tab in browser dev tools for API errors
+# Modify ports in docker-compose.yml
+```
 
-## Cost Considerations
+#### Image Pull Issues
 
-- Vercel offers a generous free tier for hobby projects
-- Backend hosting costs will depend on the service you choose
-- Consider the number of API calls and resource usage for pricing
+```bash
+# Login to GitHub Container Registry
+echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
-## Alternative Deployment
+# Pull images manually
+docker pull ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/frontend:latest
+docker pull ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/backend:latest
+```
 
-If you prefer a simpler setup, consider using:
+## Maintenance
 
-1. **Netlify** for frontend with Netlify Functions for backend
-2. **Railway** for full-stack deployment
-3. **Render.com** for full-stack deployment
+### Updates
 
-Each platform has its own strengths and pricing model, so choose based on your specific needs.
+```bash
+# Pull latest images
+docker-compose -f docker-compose.prod.yml pull
+
+# Restart with new images
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Cleanup
+
+```bash
+# Remove stopped containers
+docker-compose down
+
+# Remove images
+docker image prune -f
+
+# Remove volumes (careful - data loss)
+docker volume prune -f
+```
+
+## CI/CD Integration
+
+### GitHub Actions
+
+The repository includes automated workflows:
+
+- Builds and publishes images on push to main
+- Updates docker-compose.yml with latest images
+- Supports multi-architecture builds
+
+### Manual Build
+
+```bash
+# Build frontend
+docker build -f Dockerfile.frontend -t vivid-valid-frontend .
+
+# Build backend
+cd backend && docker build -t vivid-valid-backend .
+```
+
+## Support
+
+### Logs and Debugging
+
+```bash
+# Frontend logs
+docker-compose logs -f frontend
+
+# Backend logs
+docker-compose logs -f backend
+
+# Shell access
+docker-compose exec backend sh
+docker-compose exec frontend sh
+```
+
+### Performance Monitoring
+
+```bash
+# Container resource usage
+docker stats
+
+# System resource usage
+htop
+```
+
+## Backup and Recovery
+
+### Configuration Backup
+
+```bash
+# Backup docker-compose files
+cp docker-compose.yml docker-compose.yml.backup
+cp docker-compose.prod.yml docker-compose.prod.yml.backup
+```
+
+### Container Backup
+
+```bash
+# Export container
+docker export vivid-valid-backend > backend-backup.tar
+docker export vivid-valid-frontend > frontend-backup.tar
+```
+
+## License
+
+This deployment configuration is part of the Vivid Valid project and follows the same licensing terms.

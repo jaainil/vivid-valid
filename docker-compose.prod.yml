@@ -1,10 +1,9 @@
+version: "3.8"
+
 services:
   frontend:
-    # For production deployment, uncomment the image line and comment out the build section
-    # image: ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/frontend:latest
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+    image: ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/frontend:latest
+    container_name: vivid-valid-frontend
     ports:
       - "8080:80"
     depends_on:
@@ -26,13 +25,13 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    environment:
+      - NGINX_WORKER_PROCESSES=auto
+      - NGINX_WORKER_CONNECTIONS=1024
 
   backend:
-    # For production deployment, uncomment the image line and comment out the build section
-    # image: ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/backend:latest
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/backend:latest
+    container_name: vivid-valid-backend
     ports:
       - "3012:3001"
     environment:
@@ -60,7 +59,22 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
 
 networks:
   app-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  app-data:
+    driver: local
