@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - backend
     networks:
@@ -20,7 +20,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - FRONTEND_URL=http://localhost
+      - FRONTEND_URL=http://localhost:8080
     networks:
       - app-network
     restart: unless-stopped
