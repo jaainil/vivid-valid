@@ -332,12 +332,19 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
                         )}
 
                         {/* Strict Mode Additional Checks */}
-                        {result.normalized_email && (
+                        {(result.normalized_email || result.strictMode) && (
                           <div className="flex items-center gap-4 text-xs">
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <Mail className="h-3 w-3" />
-                              Normalized: {result.normalized_email}
-                            </div>
+                            {result.strictMode && (
+                              <Badge variant="destructive" className="text-xs">
+                                Strict Mode
+                              </Badge>
+                            )}
+                            {result.normalized_email && (
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Mail className="h-3 w-3" />
+                                Normalized: {result.normalized_email}
+                              </div>
+                            )}
                             {result.is_role_based && (
                               <Badge variant="outline" className="text-xs">
                                 <Users className="h-2 w-2 mr-1" />

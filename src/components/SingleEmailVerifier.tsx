@@ -141,7 +141,7 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
         factors: analysis.factors,
         suggestions: analysis.suggestion
           ? [analysis.suggestion]
-          : analysis.suggestions,
+          : analysis.suggestions || [],
         domainHealth: analysis.domainHealth,
         timestamp: Date.now(),
         // Map strict mode properties
@@ -154,7 +154,7 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
       };
 
       console.log("Final result to display:", finalResult);
-      onResult(finalResult);
+      onResult({ ...finalResult, strictMode: useStrictMode });
     } catch (error) {
       console.error("Validation failed:", error);
 

@@ -507,16 +507,15 @@ class EmailValidator {
             // Store server response
             serverResponse = response;
 
-            // Check RCPT TO response
-            clearTimeout(timeout);
-            cleanup();
-
             if (response.startsWith("250")) {
               // Test for catch-all by sending a RCPT TO to a random address
               const randomEmail = `nonexistent-${Date.now()}@${domain}`;
               socket.write(`RCPT TO:<${randomEmail}>\r\n`);
               step = 4;
             } else if (response.startsWith("550")) {
+              // Check RCPT TO response
+              clearTimeout(timeout);
+              cleanup();
               resolve({
                 deliverable: false,
                 reason: "Email address rejected by server",
@@ -526,6 +525,9 @@ class EmailValidator {
                 isCatchAll,
               });
             } else {
+              // Check RCPT TO response
+              clearTimeout(timeout);
+              cleanup();
               resolve({
                 deliverable: null,
                 reason: "Uncertain - server response: " + response,

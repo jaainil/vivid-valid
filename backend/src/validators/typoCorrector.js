@@ -100,8 +100,6 @@ class TypoCorrector {
       ".om": ".com",
       ".cm": ".com",
       ".ccom": ".com",
-      ".net": ".com", // Sometimes people mean .com when they type .net
-      ".org": ".com", // Sometimes people mean .com when they type .org
     };
 
     // Common keyboard layout typos

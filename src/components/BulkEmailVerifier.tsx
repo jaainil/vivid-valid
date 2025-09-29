@@ -112,9 +112,7 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
         timestamp: Date.now(),
         score: analysis.score,
         factors: analysis.factors,
-        suggestions: analysis.suggestion
-          ? [analysis.suggestion]
-          : analysis.suggestions,
+        suggestions: analysis.suggestion ? [analysis.suggestion] : (analysis.suggestions || []),
         domainHealth: analysis.domainHealth,
         // Map strict mode properties
         normalized_email: analysis.normalized_email,
@@ -123,6 +121,7 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
         gmail_normalized: analysis.gmail_normalized,
         has_plus_alias: analysis.has_plus_alias,
         checks_performed: analysis.checks_performed,
+        strictMode: useStrictMode,
       }));
 
       // Simulate progress updates for better UX

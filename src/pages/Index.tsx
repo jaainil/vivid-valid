@@ -38,6 +38,7 @@ export interface EmailResult {
   gmail_normalized?: string;
   has_plus_alias?: boolean;
   checks_performed?: string[];
+  strictMode?: boolean;
 }
 
 const Index = () => {
