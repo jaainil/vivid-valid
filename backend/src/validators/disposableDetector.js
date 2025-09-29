@@ -164,6 +164,7 @@ class DisposableDetector {
           `Loaded ${domains.length} disposable domains from GitHub blocklist`
         );
       } catch (fileError) {
+        console.error("Error reading disposable domains file:", fileError);
         // File doesn't exist, use built-in list
         console.log(
           "GitHub blocklist not found, using built-in disposable domains list"

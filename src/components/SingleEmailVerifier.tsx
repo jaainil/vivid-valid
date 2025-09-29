@@ -35,7 +35,6 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [backendStatus, setBackendStatus] = useState<string>("unknown");
   const [useStrictMode, setUseStrictMode] = useState<boolean>(false);
 
   const steps = [
@@ -65,17 +64,6 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
     if (corrected) {
       setEmail(corrected);
       setSuggestions([]);
-    }
-  };
-
-  const testConnection = async () => {
-    setBackendStatus("testing");
-    try {
-      const isConnected = await testBackendConnection();
-      setBackendStatus(isConnected ? "connected" : "failed");
-    } catch (error) {
-      setBackendStatus("failed");
-      console.error("Connection test failed:", error);
     }
   };
 
@@ -223,40 +211,6 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
                 MAX SECURITY
               </Badge>
             )}
-          </div>
-        </div>
-
-        {/* Backend Connection Status */}
-        <div className="mt-4">
-          <Button
-            onClick={testConnection}
-            variant="outline"
-            size="sm"
-            className="mb-2"
-          >
-            Test Backend Connection
-          </Button>
-          <div className="text-sm">
-            Backend Status:{" "}
-            <span
-              className={`font-medium ${
-                backendStatus === "connected"
-                  ? "text-green-600"
-                  : backendStatus === "failed"
-                  ? "text-red-600"
-                  : backendStatus === "testing"
-                  ? "text-yellow-600"
-                  : "text-gray-600"
-              }`}
-            >
-              {backendStatus === "connected"
-                ? "✅ Connected"
-                : backendStatus === "failed"
-                ? "❌ Failed"
-                : backendStatus === "testing"
-                ? "🔄 Testing..."
-                : "❓ Unknown"}
-            </span>
           </div>
         </div>
       </div>

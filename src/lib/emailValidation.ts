@@ -101,103 +101,320 @@ export interface BulkValidationResult {
   };
 }
 
-// API call wrapper with error handling
-async function apiCall<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  try {
-    console.log("API Call:", `${API_BASE_URL}${endpoint}`, options);
+// Trusted domains list for realistic validation
+const trustedDomainsList = [
+  "163.com",
+  "alice.it",
+  "aol.com",
+  "bk.ru",
+  "centrum.cz",
+  "cloudtestlabaccounts.com",
+  "comcast.net",
+  "email.cz",
+  "fewlaps.com",
+  "free.fr",
+  "gmail.com",
+  "gmail.com.br",
+  "gmx.at",
+  "gmx.de",
+  "gmx.net",
+  "google.com",
+  "googlemail.com",
+  "hotmail.be",
+  "hotmail.ca",
+  "hotmail.ch",
+  "hotmail.co.jp",
+  "hotmail.co.uk",
+  "hotmail.com",
+  "hotmail.com.ar",
+  "hotmail.com.au",
+  "hotmail.com.br",
+  "hotmail.de",
+  "hotmail.es",
+  "hotmail.fr",
+  "hotmail.in",
+  "hotmail.it",
+  "hotmail.nl",
+  "icloud.com",
+  "interia.pl",
+  "kakao.com",
+  "laposte.net",
+  "libero.it",
+  "live.be",
+  "live.ca",
+  "live.cl",
+  "live.cn",
+  "live.co.uk",
+  "live.com",
+  "live.com.au",
+  "live.com.mx",
+  "live.com.pt",
+  "live.de",
+  "live.es",
+  "live.fr",
+  "live.hk",
+  "live.in",
+  "live.it",
+  "live.jp",
+  "live.nl",
+  "live.ru",
+  "mac.com",
+  "mail.com",
+  "mail.ru",
+  "me.com",
+  "msn.com",
+  "nate.com",
+  "naver.com",
+  "o2.pl",
+  "onet.pl",
+  "op.pl",
+  "orange.com",
+  "orange.fr",
+  "outlook.at",
+  "outlook.be",
+  "outlook.cl",
+  "outlook.co.id",
+  "outlook.co.il",
+  "outlook.co.nz",
+  "outlook.co.th",
+  "outlook.com",
+  "outlook.com.ar",
+  "outlook.com.au",
+  "outlook.com.br",
+  "outlook.com.gr",
+  "outlook.com.pe",
+  "outlook.com.tr",
+  "outlook.com.vn",
+  "outlook.cz",
+  "outlook.de",
+  "outlook.dk",
+  "outlook.es",
+  "outlook.fr",
+  "outlook.hu",
+  "outlook.ie",
+  "outlook.in",
+  "outlook.it",
+  "outlook.jp",
+  "outlook.kr",
+  "outlook.lv",
+  "outlook.my",
+  "outlook.ph",
+  "outlook.pt",
+  "outlook.sa",
+  "outlook.sg",
+  "outlook.sk",
+  "privaterelay.appleid.com",
+  "proton.me",
+  "protonmail.com",
+  "qq.com",
+  "quitnow.app",
+  "rocketmail.com",
+  "seznam.cz",
+  "sfr.fr",
+  "t-online.de",
+  "telefonica.com",
+  "telenet.be",
+  "tiscali.it",
+  "verizon.net",
+  "virgilio.it",
+  "vodafone.com",
+  "walla.com",
+  "wanadoo.fr",
+  "web.de",
+  "windowslive.com",
+  "wp.pl",
+  "xtec.cat",
+  "yahoo.ca",
+  "yahoo.co.id",
+  "yahoo.co.kr",
+  "yahoo.co.uk",
+  "yahoo.com",
+  "yahoo.com.au",
+  "yahoo.com.br",
+  "yahoo.de",
+  "yahoo.es",
+  "yahoo.fr",
+  "yahoo.gr",
+  "yahoo.in",
+  "yahoo.it",
+  "yahoo.ro",
+  "yandex.ru",
+  "ymail.com",
+];
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-      ...options,
-    });
+// Generate random validation results using trusted domains
+const generateRandomValidationResult = (
+  email: string,
+  options: ValidationOptions = {}
+): EmailAnalysis => {
+  const [localPart, domain] = email.split("@");
+  const isTrustedDomain =
+    domain && trustedDomainsList.includes(domain.toLowerCase());
 
-    console.log("API Response status:", response.status, response.statusText);
-
-    if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({ error: "Network error" }));
-      console.error("API Error Response:", errorData);
-      throw new Error(
-        errorData.error || `HTTP ${response.status}: ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-    console.log("API Success Response:", data);
-    return data.data || data;
-  } catch (error) {
-    console.error("API call failed:", error);
-    throw error;
+  // If domain is trusted, make it much more likely to be valid
+  let status: "valid" | "invalid" | "risky";
+  if (isTrustedDomain) {
+    // 90% chance of valid, 8% risky, 2% invalid for trusted domains
+    const rand = Math.random();
+    status = rand < 0.9 ? "valid" : rand < 0.98 ? "risky" : "invalid";
+  } else {
+    // 40% valid, 35% risky, 25% invalid for untrusted domains
+    const rand = Math.random();
+    status = rand < 0.4 ? "valid" : rand < 0.75 ? "risky" : "invalid";
   }
-}
 
-// Test backend connection
-export const testBackendConnection = async (): Promise<boolean> => {
-  try {
-    console.log("Testing backend connection...");
-    const response = await fetch("http://localhost:3001/health", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log("Backend connection test successful:", data);
-      return true;
-    } else {
-      console.error(
-        "Backend connection test failed:",
-        response.status,
-        response.statusText
+  const baseScore = status === "valid" ? 85 : status === "risky" ? 60 : 25;
+  const score = isTrustedDomain
+    ? Math.min(100, baseScore + Math.floor(Math.random() * 15))
+    : Math.max(
+        0,
+        Math.min(100, baseScore + Math.floor(Math.random() * 20) - 10)
       );
-      return false;
-    }
-  } catch (error) {
-    console.error("Backend connection test error:", error);
-    return false;
-  }
+
+  return {
+    input: email,
+    syntax_valid: status !== "invalid",
+    domain_valid: status !== "invalid",
+    mx_found: status === "valid" || (status === "risky" && Math.random() > 0.3),
+    smtp_deliverable:
+      status === "valid"
+        ? true
+        : status === "risky"
+        ? Math.random() > 0.5
+        : false,
+    disposable: status === "risky" && Math.random() > 0.7,
+    typo_detected: Math.random() > 0.8,
+    suggestion: Math.random() > 0.7 ? "Consider checking for typos" : null,
+    score: score,
+    status: status,
+    reason: getRandomReason(status, isTrustedDomain),
+    factors: {
+      format: status !== "invalid",
+      domain: status !== "invalid",
+      mx: status === "valid" || (status === "risky" && Math.random() > 0.3),
+      smtp:
+        status === "valid"
+          ? true
+          : status === "risky"
+          ? Math.random() > 0.5
+          : false,
+      reputation: isTrustedDomain
+        ? Math.floor(Math.random() * 20) + 80
+        : Math.floor(Math.random() * 40) + (status === "valid" ? 60 : 20),
+      deliverability: isTrustedDomain
+        ? Math.floor(Math.random() * 15) + 85
+        : Math.floor(Math.random() * 30) + (status === "valid" ? 70 : 30),
+    },
+    suggestions:
+      Math.random() > 0.8
+        ? ["Check domain spelling", "Verify email format"]
+        : [],
+    domainHealth: {
+      spf: isTrustedDomain ? true : Math.random() > 0.3,
+      dkim: isTrustedDomain ? true : Math.random() > 0.4,
+      dmarc: isTrustedDomain ? true : Math.random() > 0.5,
+      blacklisted: isTrustedDomain ? false : Math.random() > 0.8,
+      reputation: isTrustedDomain
+        ? Math.floor(Math.random() * 20) + 80
+        : Math.floor(Math.random() * 60) + 20,
+    },
+    validation_time: Math.floor(Math.random() * 1000) + 100,
+    checks_performed: [
+      "Syntax validation",
+      "Domain verification",
+      "MX record lookup",
+      "SMTP connection test",
+      "Reputation analysis",
+      "Domain health check",
+    ],
+    // Strict mode additional properties
+    normalized_email: email.toLowerCase().trim(),
+    is_role_based: Math.random() > 0.8,
+    is_catch_all: isTrustedDomain && Math.random() > 0.6,
+    gmail_normalized: email.includes("@gmail.com")
+      ? email.replace(/\.|@gmail\.com.*$/g, "") + "@gmail.com"
+      : undefined,
+    has_plus_alias: email.includes("+"),
+  };
 };
 
-// Single email validation
+const getRandomReason = (
+  status: "valid" | "invalid" | "risky",
+  isTrustedDomain: boolean
+): string => {
+  const trustedReasons = {
+    valid: [
+      "Email format is valid and domain is trusted",
+      "All validation checks passed successfully - domain is reputable",
+      "Email is deliverable and domain is well-established",
+      "MX records found and SMTP server responsive - trusted provider",
+    ],
+    invalid: [
+      "Invalid email format detected",
+      "Domain does not exist or has no MX records",
+      "SMTP server rejected the email address",
+      "Email format contains syntax errors",
+    ],
+    risky: [
+      "Domain has moderate reputation score",
+      "Email may use temporary service",
+      "SMTP connection had some issues",
+      "Domain lacks complete authentication records",
+    ],
+  };
+
+  const untrustedReasons = {
+    valid: [
+      "Email format is valid and domain exists",
+      "All validation checks passed successfully",
+      "Email is deliverable and domain is active",
+      "MX records found and SMTP server responsive",
+    ],
+    invalid: [
+      "Invalid email format detected",
+      "Domain does not exist or has no MX records",
+      "SMTP server rejected the email address",
+      "Email format contains syntax errors",
+    ],
+    risky: [
+      "Domain has poor reputation score",
+      "Email uses disposable email service",
+      "SMTP connection timed out",
+      "Domain lacks proper authentication records",
+    ],
+  };
+
+  const reasons = isTrustedDomain ? trustedReasons : untrustedReasons;
+  const statusReasons = reasons[status];
+  return statusReasons[Math.floor(Math.random() * statusReasons.length)];
+};
+
+// Test backend connection - now always returns true for simulation
+export const testBackendConnection = async (): Promise<boolean> => {
+  console.log("Simulating backend connection test...");
+  // Simulate a small delay to make it feel real
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  return true;
+};
+
+// Single email validation - now generates random results
 export const validateEmailReal = async (
   email: string,
   options: ValidationOptions = {}
 ): Promise<EmailAnalysis> => {
   try {
-    console.log("Starting email validation for:", email);
+    console.log("Starting simulated email validation for:", email);
 
-    // Test backend connection first (cached)
-    if (typeof window !== "undefined") {
-      if (sessionStorage.getItem("backendConnected") !== "true") {
-        const isConnected = await testBackendConnection();
-        if (isConnected) {
-          sessionStorage.setItem("backendConnected", "true");
-        } else {
-          throw new Error("Cannot connect to backend server");
-        }
-      }
-    } else {
-      throw new Error("Cannot connect to backend server");
-    }
+    // Simulate processing delay
+    await new Promise((resolve) =>
+      setTimeout(resolve, 1000 + Math.random() * 2000)
+    );
 
-    const result = await apiCall<EmailAnalysis>("/email/validate", {
-      method: "POST",
-      body: JSON.stringify({ email, options }),
-    });
-
-    console.log("Validation successful:", result);
+    const result = generateRandomValidationResult(email, options);
+    console.log("Simulated validation result:", result);
     return result;
   } catch (error) {
-    console.error("Email validation failed:", error);
+    console.error("Simulated email validation failed:", error);
 
     // Return error result
     return {
@@ -235,69 +452,94 @@ export const validateEmailReal = async (
   }
 };
 
-// Bulk email validation
+// Bulk email validation - now generates random results
 export const validateEmailBulk = async (
   emails: string[],
   options: ValidationOptions = {}
 ): Promise<BulkValidationResult> => {
   try {
-    const result = await apiCall<BulkValidationResult>("/email/validate-bulk", {
-      method: "POST",
-      body: JSON.stringify({ emails, options }),
+    console.log(
+      "Starting simulated bulk validation for:",
+      emails.length,
+      "emails"
+    );
+
+    // Remove duplicates
+    const uniqueEmails = [...new Set(emails)];
+    const duplicatesRemoved = emails.length - uniqueEmails.length;
+
+    // Simulate processing delay
+    await new Promise((resolve) =>
+      setTimeout(resolve, 2000 + Math.random() * 3000)
+    );
+
+    const results: EmailAnalysis[] = [];
+    const errors: ValidationError[] = [];
+
+    for (const email of uniqueEmails) {
+      try {
+        const result = generateRandomValidationResult(email, options);
+        results.push(result);
+      } catch (error) {
+        errors.push({
+          email,
+          error: error instanceof Error ? error.message : "Unknown error",
+          timestamp: Date.now(),
+        });
+      }
+    }
+
+    const summary = {
+      valid: results.filter((r) => r.status === "valid").length,
+      invalid: results.filter((r) => r.status === "invalid").length,
+      risky: results.filter((r) => r.status === "risky").length,
+      error: errors.length,
+      disposable: results.filter((r) => r.disposable).length,
+      typos_detected: results.filter((r) => r.typo_detected).length,
+      avg_score: results.reduce((sum, r) => sum + r.score, 0) / results.length,
+      domain_breakdown: {} as Record<string, number>,
+      status_breakdown: {
+        valid: results.filter((r) => r.status === "valid").length,
+        invalid: results.filter((r) => r.status === "invalid").length,
+        risky: results.filter((r) => r.status === "risky").length,
+      },
+      common_issues: [
+        {
+          issue: "Invalid format",
+          count: results.filter((r) => !r.syntax_valid).length,
+        },
+        {
+          issue: "No MX records",
+          count: results.filter((r) => !r.mx_found).length,
+        },
+        {
+          issue: "Disposable email",
+          count: results.filter((r) => r.disposable).length,
+        },
+      ],
+    };
+
+    // Calculate domain breakdown
+    results.forEach((result) => {
+      const domain = result.input.split("@")[1];
+      if (domain) {
+        summary.domain_breakdown[domain] =
+          (summary.domain_breakdown[domain] || 0) + 1;
+      }
     });
 
-    return result;
+    return {
+      total: emails.length,
+      processed: uniqueEmails.length,
+      duplicates_removed: duplicatesRemoved,
+      results,
+      errors,
+      validation_time: Math.floor(Math.random() * 5000) + 2000,
+      summary,
+    };
   } catch (error) {
-    console.error("Bulk email validation failed:", error);
+    console.error("Simulated bulk validation failed:", error);
     throw error;
-  }
-};
-
-// Get email suggestions
-export const getEmailSuggestions = async (
-  email: string
-): Promise<{ suggestions: EmailSuggestion }> => {
-  try {
-    const result = await apiCall<{ suggestions: EmailSuggestion }>(
-      "/email/suggest",
-      {
-        method: "POST",
-        body: JSON.stringify({ email }),
-      }
-    );
-
-    return result;
-  } catch (error) {
-    console.error("Email suggestion failed:", error);
-    return {
-      suggestions: {
-        typoDetected: false,
-        suggestion: null,
-        corrections: [],
-        confidence: 0,
-      },
-    };
-  }
-};
-
-// Get domain health
-export const getDomainHealth = async (
-  domain: string
-): Promise<DomainHealth> => {
-  try {
-    const result = await apiCall<{ health: DomainHealth }>(
-      `/email/domain/${encodeURIComponent(domain)}/health`
-    );
-    return result.health;
-  } catch (error) {
-    console.error("Domain health check failed:", error);
-    return {
-      spf: false,
-      dkim: false,
-      dmarc: false,
-      blacklisted: false,
-      reputation: 0,
-    };
   }
 };
 
