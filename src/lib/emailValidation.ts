@@ -143,7 +143,7 @@ async function apiCall<T>(
 export const testBackendConnection = async (): Promise<boolean> => {
   try {
     console.log("Testing backend connection...");
-    const healthUrl = API_BASE_URL.replace("/api", "") + "/health";
+    const healthUrl = `${API_BASE_URL}/health`;
     const response = await fetch(healthUrl, {
       method: "GET",
       headers: {
