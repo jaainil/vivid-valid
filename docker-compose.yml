@@ -1,71 +1,54 @@
 services:
   frontend:
-    # For production deployment, uncomment the image line and comment out the build section
-    # image: ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/frontend:latest
-    # image: ghcr.io/jaainil/vivid-valid/frontend:main-1584f5a
-    # image: ghcr.io/jaainil/vivid-valid/frontend:main-806a61a
-# #     build:
-#       context: .
-#       dockerfile: Dockerfile.frontend
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - VITE_API_BASE_URL=http://localhost:3012/api
     ports:
       - "8080:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--quiet",
-          "--tries=1",
-          "--spider",
-          "http://localhost:80",
-        ]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
 
   backend:
-    # For production deployment, uncomment the image line and comment out the build section
-    # image: ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/backend:latest
-#     # image: ghcr.io/jaainil/vivid-valid/frontend:main-1584f5a
-#     # image: ghcr.io/jaainil/vivid-valid/backend:main-1584f5a
-    # image: ghcr.io/jaainil/vivid-valid/frontend:main-806a61a
-    # image: ghcr.io/jaainil/vivid-valid/backend:main-806a61a
-# # # #     build:
-#       context: ./backend
-#       dockerfile: Dockerfile
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "3012:3001"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - PORT=3001
       - FRONTEND_URL=http://localhost:8080
       - BACKEND_URL=http://localhost:3012
-      - LOG_LEVEL=info
-      - RATE_LIMIT_WINDOW_MS=900000
+      - LOG_LEVEL=debug
+      - RATE_LIMIT_WINDOW_MS=60000
       - RATE_LIMIT_MAX_REQUESTS=100
     networks:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--quiet",
-          "--tries=1",
-          "--spider",
-          "http://localhost:3001/health",
-        ]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
 
 networks:
   app-network:

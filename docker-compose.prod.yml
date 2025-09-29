@@ -2,25 +2,22 @@ version: "3.8"
 
 services:
   frontend:
-    image: ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/frontend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - VITE_API_BASE_URL=http://backend:3001/api
     container_name: vivid-valid-frontend
     ports:
-      - "8080:80"
+      - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--quiet",
-          "--tries=1",
-          "--spider",
-          "http://localhost:80",
-        ]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -28,17 +25,27 @@ services:
     environment:
       - NGINX_WORKER_PROCESSES=auto
       - NGINX_WORKER_CONNECTIONS=1024
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
 
   backend:
-    image: ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: vivid-valid-backend
     ports:
-      - "3012:3001"
+      - "3001:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - FRONTEND_URL=http://localhost:8080
-      - BACKEND_URL=http://localhost:3012
+      - FRONTEND_URL=http://frontend:80
+      - BACKEND_URL=http://backend:3001
       - LOG_LEVEL=info
       - RATE_LIMIT_WINDOW_MS=900000
       - RATE_LIMIT_MAX_REQUESTS=100
@@ -46,15 +53,7 @@ services:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--quiet",
-          "--tries=1",
-          "--spider",
-          "http://localhost:3001/health",
-        ]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
