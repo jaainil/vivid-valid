@@ -1,10 +1,21 @@
 services:
   frontend:
+<<<<<<< HEAD
     build:
       context: .
       dockerfile: Dockerfile.frontend
       args:
         - VITE_API_BASE_URL=http://localhost:3012/api
+=======
+    # For production deployment, uncomment the image line and comment out the build section
+    # image: ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/frontend:latest
+    # image: ghcr.io/jaainil/vivid-valid/frontend:main-1584f5a
+    # image: ghcr.io/jaainil/vivid-valid/frontend:main-806a61a
+    # image: ghcr.io/jaainil/vivid-valid/frontend:main-b66ca8e
+# # #     build:
+#       context: .
+#       dockerfile: Dockerfile.frontend
+>>>>>>> f127a6c138ed07d06ca93681a062c5e61673a965
     ports:
       - "8080:80"
     depends_on:
@@ -24,9 +35,23 @@ services:
       - NGINX_PORT=80
 
   backend:
+<<<<<<< HEAD
     build:
       context: ./backend
       dockerfile: Dockerfile
+=======
+    # For production deployment, uncomment the image line and comment out the build section
+    # image: ghcr.io/aexawareinfotech-pvt-ltd/vivid-valid/backend:latest
+# #     # image: ghcr.io/jaainil/vivid-valid/frontend:main-1584f5a
+# #     # image: ghcr.io/jaainil/vivid-valid/backend:main-1584f5a
+#     # image: ghcr.io/jaainil/vivid-valid/frontend:main-806a61a
+#     # image: ghcr.io/jaainil/vivid-valid/backend:main-806a61a
+    # image: ghcr.io/jaainil/vivid-valid/frontend:main-b66ca8e
+    # image: ghcr.io/jaainil/vivid-valid/backend:main-b66ca8e
+# # # # # #     build:
+#       context: ./backend
+#       dockerfile: Dockerfile
+>>>>>>> f127a6c138ed07d06ca93681a062c5e61673a965
     ports:
       - "3012:3001"
     environment:
