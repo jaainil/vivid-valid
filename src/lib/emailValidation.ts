@@ -1,4 +1,5 @@
-const API_BASE_URL = "http://localhost:3001/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
 
 // Add error logging to debug frontend issues
 console.log("Email validator API URL:", API_BASE_URL);
@@ -174,9 +175,17 @@ export const validateEmailReal = async (
   try {
     console.log("Starting email validation for:", email);
 
-    // Test backend connection first
-    const isConnected = await testBackendConnection();
-    if (!isConnected) {
+    // Test backend connection first (cached)
+    if (typeof window !== "undefined") {
+      if (sessionStorage.getItem("backendConnected") !== "true") {
+        const isConnected = await testBackendConnection();
+        if (isConnected) {
+          sessionStorage.setItem("backendConnected", "true");
+        } else {
+          throw new Error("Cannot connect to backend server");
+        }
+      }
+    } else {
       throw new Error("Cannot connect to backend server");
     }
 
