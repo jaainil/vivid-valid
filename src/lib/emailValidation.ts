@@ -1,5 +1,6 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+const API_BASE_URL = import.meta.env.DEV
+  ? import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api"
+  : "/api";
 
 // Add error logging to debug frontend issues
 console.log("Email validator API URL:", API_BASE_URL);
@@ -142,7 +143,8 @@ async function apiCall<T>(
 export const testBackendConnection = async (): Promise<boolean> => {
   try {
     console.log("Testing backend connection...");
-    const response = await fetch("http://localhost:3001/health", {
+    const healthUrl = API_BASE_URL.replace("/api", "") + "/health";
+    const response = await fetch(healthUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
