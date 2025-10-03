@@ -1,14 +1,7 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, ReactNode } from "react";
 
 interface ThemeContextType {
   theme: string;
-  setTheme: (theme: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -23,52 +16,19 @@ export const useTheme = () => {
 
 interface ThemeProviderProps {
   children: ReactNode;
-  defaultTheme?: string;
-  enableSystem?: boolean;
 }
 
-export const ThemeProvider = ({
-  children,
-  defaultTheme = "dark",
-  enableSystem = true,
-}: ThemeProviderProps) => {
-  const [theme, setTheme] = useState(defaultTheme);
-
+export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const root = window.document.documentElement;
-      root.classList.remove("light", "dark");
-
-      if (enableSystem) {
-        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-          .matches
-          ? "dark"
-          : "light";
-        const savedTheme = localStorage.getItem("theme") as
-          | "light"
-          | "dark"
-          | null;
-        const activeTheme = savedTheme || systemTheme;
-        setTheme(activeTheme);
-        root.classList.add(activeTheme);
-      } else {
-        root.classList.add(theme);
-      }
+      root.classList.remove("dark");
+      root.classList.add("light");
     }
-  }, [theme, enableSystem]);
-
-  const handleSetTheme = (newTheme: string) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("theme", newTheme);
-      const root = window.document.documentElement;
-      root.classList.remove("light", "dark");
-      root.classList.add(newTheme);
-      setTheme(newTheme);
-    }
-  };
+  }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme: handleSetTheme }}>
+    <ThemeContext.Provider value={{ theme: "light" }}>
       {children}
     </ThemeContext.Provider>
   );
