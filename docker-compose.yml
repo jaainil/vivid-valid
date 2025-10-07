@@ -113,9 +113,9 @@ services:
       - VITE_MAX_FILE_SIZE=${VITE_MAX_FILE_SIZE:-10485760}
       - VITE_SUPPORTED_FILE_TYPES=${VITE_SUPPORTED_FILE_TYPES:-.csv,.txt}
       - VITE_MAX_BULK_EMAILS=${VITE_MAX_BULK_EMAILS:-1000}
-      - FRONTEND_PORT=${FRONTEND_PORT:-8080}
+      - FRONTEND_PORT=${FRONTEND_PORT:-8181}
     ports:
-      - "${FRONTEND_PORT:-8080}:${FRONTEND_PORT:-8080}"
+      - "${FRONTEND_PORT:-8181}:${FRONTEND_PORT:-8181}"
     depends_on:
       - backend
     networks:
@@ -128,7 +128,7 @@ services:
           "--quiet",
           "--tries=1",
           "--spider",
-          "http://localhost:${FRONTEND_PORT:-8080}",
+          "http://localhost:${FRONTEND_PORT:-8181}",
         ]
       interval: 30s
       timeout: 10s

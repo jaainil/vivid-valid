@@ -31,11 +31,11 @@ ENV TMPDIR=/tmp/vite-temp
 USER frontend
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8181
 
 # Health check script
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://0.0.0.0:8080 || exit 1
+  CMD wget --quiet --tries=1 --spider http://0.0.0.0:8181 || exit 1
 
 # Build the application
 RUN pnpm run build
