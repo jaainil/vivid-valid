@@ -139,30 +139,32 @@ const options = {
   allowComments: true, // Allow comments in emails
 
   // Performance
-    smtpTimeout: 5000, // SMTP timeout in ms
-    smtpFromDomain: "validator.example.com",
-    enableCache: true, // Enable result caching
-    useStrictMode: false, // Enable strict validation mode
-  };
-  ```
-  
-  ### Strict Mode
-  
-  The validator includes a **Strict Mode** that enables maximum validation strictness with a single parameter. When `useStrictMode: true` is set, it automatically enables:
-  
-  - `strictMode: true` - Stricter RFC compliance
-  - `enableStrictSMTP: true` - Enhanced SMTP testing
-  - `enableDeepDomainAnalysis: true` - Comprehensive domain checks
-  - `enableAdvancedHeuristics: true` - Sophisticated pattern detection
-  - `enableRoleBasedDetection: true` - Role-based account identification
-  - `enableGmailNormalization: true` - Gmail address normalization
-  - `enableCatchAllDetection: true` - Catch-all domain detection
-  - `allowQuotedLocal: false` - Disallow quoted local parts
-  - `allowComments: false` - Disallow comments in emails
-  
-  Strict mode also applies stricter scoring thresholds:
-  - Valid: 85+ points (instead of 75+)
-  - Risky: 65+ points (instead of 50+)
+  smtpTimeout: 5000, // SMTP timeout in ms
+  smtpFromDomain: "validator.example.com",
+  enableCache: true, // Enable result caching
+  useStrictMode: false, // Enable strict validation mode
+};
+```
+
+### Strict Mode
+
+The validator includes a **Strict Mode** that enables maximum validation strictness with a single parameter. When `useStrictMode: true` is set, it automatically enables:
+
+- `strictMode: true` - Stricter RFC compliance
+- `enableStrictSMTP: true` - Enhanced SMTP testing
+- `enableDeepDomainAnalysis: true` - Comprehensive domain checks
+- `enableAdvancedHeuristics: true` - Sophisticated pattern detection
+- `enableRoleBasedDetection: true` - Role-based account identification
+- `enableGmailNormalization: true` - Gmail address normalization
+- `enableCatchAllDetection: true` - Catch-all domain detection
+- `allowQuotedLocal: false` - Disallow quoted local parts
+- `allowComments: false` - Disallow comments in emails
+
+Strict mode also applies stricter scoring thresholds:
+
+- Valid: 85+ points (instead of 75+)
+- Risky: 65+ points (instead of 50+)
+
 ```
 
 ## 📖 API Documentation
@@ -170,8 +172,10 @@ const options = {
 ### Base URL
 
 ```
+
 http://localhost:3001/api
-```
+
+````
 
 ### Endpoints
 
@@ -189,7 +193,7 @@ Validate a single email address.
     "strictMode": false
   }
 }
-```
+````
 
 **Response:**
 
@@ -434,21 +438,6 @@ npm run test:coverage
 - GDPR compliant
 
 ## 🚀 Deployment
-
-### Docker Deployment
-
-```dockerfile
-FROM node:18-alpine
-
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY . .
-EXPOSE 3001
-
-CMD ["npm", "start"]
-```
 
 ### Environment-Specific Configs
 
