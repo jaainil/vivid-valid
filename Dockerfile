@@ -35,7 +35,7 @@ EXPOSE 8080
 
 # Health check script
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:8080 || exit 1
+  CMD wget --quiet --tries=1 --spider http://0.0.0.0:8080 || exit 1
 
 # Build the application
 RUN pnpm run build
