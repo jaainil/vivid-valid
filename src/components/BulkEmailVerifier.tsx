@@ -50,6 +50,19 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
     const text = await file.text();
     const emails: string[] = [];
 
+    const supportedFileTypes = import.meta.env.VITE_SUPPORTED_FILE_TYPES?.split(
+      ","
+    ) || [".csv", ".txt"];
+    const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
+
+    if (!supportedFileTypes.includes(fileExtension)) {
+      throw new Error(
+        `Unsupported file type. Supported types: ${supportedFileTypes.join(
+          ", "
+        )}`
+      );
+    }
+
     if (file.name.endsWith(".csv")) {
       // Parse CSV - assume emails are in first column or any column
       const lines = text.split("\n");
@@ -112,7 +125,9 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
         timestamp: Date.now(),
         score: analysis.score,
         factors: analysis.factors,
-        suggestions: analysis.suggestion ? [analysis.suggestion] : (analysis.suggestions || []),
+        suggestions: analysis.suggestion
+          ? [analysis.suggestion]
+          : analysis.suggestions || [],
         domainHealth: analysis.domainHealth,
         // Map strict mode properties
         normalized_email: analysis.normalized_email,
@@ -152,10 +167,27 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
   };
 
   const handleFileSelect = (file: File) => {
-    if (!file.type.includes("csv") && !file.name.endsWith(".txt")) {
+    const maxFileSize = parseInt(import.meta.env.VITE_MAX_FILE_SIZE);
+    const supportedFileTypes = import.meta.env.VITE_SUPPORTED_FILE_TYPES?.split(
+      ","
+    );
+    const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
+
+    if (file.size > maxFileSize) {
+      toast({
+        title: "File Too Large",
+        description: `File size must be less than ${Math.round(
+          maxFileSize / 1024 / 1024
+        )}MB`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!supportedFileTypes.includes(fileExtension)) {
       toast({
         title: "Invalid File Type",
-        description: "Please upload a CSV or TXT file",
+        description: `Please upload a ${supportedFileTypes.join(" or ")} file`,
         variant: "destructive",
       });
       return;
@@ -367,7 +399,7 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv,.txt"
+          accept={import.meta.env.VITE_SUPPORTED_FILE_TYPES}
           onChange={handleFileInput}
           className="hidden"
         />
@@ -470,7 +502,6 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
                     {result.reason}
                   </div>
                 </div>
-
                 <Badge className={`status-${result.status} border text-xs`}>
                   {result.status.toUpperCase()}
                 </Badge>

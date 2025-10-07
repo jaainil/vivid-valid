@@ -3,7 +3,7 @@ const path = require("path");
 const NodeCache = require("node-cache");
 
 // Cache for disposable domain lookups (24 hour TTL)
-const cache = new NodeCache({ stdTTL: 86400 });
+const cache = new NodeCache({ stdTTL: parseInt(process.env.DISPOSABLE_CACHE_TTL) || 86400 });
 
 class DisposableDetector {
   constructor() {

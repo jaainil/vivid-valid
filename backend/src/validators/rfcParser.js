@@ -39,10 +39,10 @@ class RFCParser {
       email = email.trim();
 
       // Length check (RFC 5321 limit)
-      if (email.length > 320) {
+      if (email.length > parseInt(process.env.MAX_EMAIL_LENGTH) || 320) {
         return {
           valid: false,
-          reason: "Email exceeds maximum length of 320 characters",
+          reason: `Email exceeds maximum length of ${process.env.MAX_EMAIL_LENGTH || 320} characters`,
         };
       }
 
@@ -115,8 +115,8 @@ class RFCParser {
 
   validateLocalPart(localPart) {
     // Length check (RFC 5321)
-    if (localPart.length > 64) {
-      return { valid: false, reason: "Local part exceeds 64 characters" };
+    if (localPart.length > parseInt(process.env.MAX_LOCAL_PART_LENGTH) || 64) {
+      return { valid: false, reason: `Local part exceeds ${process.env.MAX_LOCAL_PART_LENGTH || 64} characters` };
     }
 
     if (localPart.length === 0) {
@@ -196,8 +196,8 @@ class RFCParser {
 
   validateDomainPart(domain) {
     // Length check
-    if (domain.length > 253) {
-      return { valid: false, reason: "Domain exceeds 253 characters" };
+    if (domain.length > parseInt(process.env.MAX_DOMAIN_LENGTH) || 253) {
+      return { valid: false, reason: `Domain exceeds ${process.env.MAX_DOMAIN_LENGTH || 253} characters` };
     }
 
     if (domain.length === 0) {
@@ -234,8 +234,8 @@ class RFCParser {
 
   validateDomainLabel(label, isTopLevel = false) {
     // Length check (RFC 1035)
-    if (label.length > 63) {
-      return { valid: false, reason: "Domain label exceeds 63 characters" };
+    if (label.length > parseInt(process.env.MAX_DOMAIN_LABEL_LENGTH) || 63) {
+      return { valid: false, reason: `Domain label exceeds ${process.env.MAX_DOMAIN_LABEL_LENGTH || 63} characters` };
     }
 
     if (label.length === 0) {
@@ -258,10 +258,10 @@ class RFCParser {
           reason: "Top-level domain must contain only letters",
         };
       }
-      if (label.length < 2) {
+      if (label.length < parseInt(process.env.MIN_TLD_LENGTH) || 2) {
         return {
           valid: false,
-          reason: "Top-level domain must be at least 2 characters",
+          reason: `Top-level domain must be at least ${process.env.MIN_TLD_LENGTH || 2} characters`,
         };
       }
     } else {
@@ -319,8 +319,10 @@ class RFCParser {
 
     // Check for valid TLD length
     const tld = domain.split(".").pop();
-    if (tld.length < 2 || tld.length > 6) {
-      return { valid: false, reason: "Invalid top-level domain length" };
+    const minTldLength = parseInt(process.env.MIN_TLD_LENGTH) || 2;
+    const maxTldLength = parseInt(process.env.MAX_TLD_LENGTH) || 6;
+    if (tld.length < minTldLength || tld.length > maxTldLength) {
+      return { valid: false, reason: `Invalid top-level domain length (must be ${minTldLength}-${maxTldLength} characters)` };
     }
 
     // Check for suspicious patterns

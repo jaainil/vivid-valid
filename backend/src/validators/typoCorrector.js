@@ -1,7 +1,7 @@
 const NodeCache = require("node-cache");
 
 // Cache for typo corrections (1 hour TTL)
-const cache = new NodeCache({ stdTTL: 3600 });
+const cache = new NodeCache({ stdTTL: parseInt(process.env.TYPO_CORRECTION_CACHE_TTL) || 3600 });
 
 class TypoCorrector {
   constructor() {

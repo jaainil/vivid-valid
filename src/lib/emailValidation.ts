@@ -1,5 +1,7 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const MAX_BULK_EMAILS = parseInt(import.meta.env.VITE_MAX_BULK_EMAILS);
+const MAX_FILE_SIZE = parseInt(import.meta.env.VITE_MAX_FILE_SIZE);
+const SUPPORTED_FILE_TYPES = import.meta.env.VITE_SUPPORTED_FILE_TYPES;
 
 // Add error logging to debug frontend issues
 console.log("Email validator API URL:", API_BASE_URL);
@@ -142,7 +144,8 @@ async function apiCall<T>(
 export const testBackendConnection = async (): Promise<boolean> => {
   try {
     console.log("Testing backend connection...");
-    const response = await fetch("http://localhost:3001/health", {
+    const healthUrl = API_BASE_URL.replace("/api", "/health");
+    const response = await fetch(healthUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

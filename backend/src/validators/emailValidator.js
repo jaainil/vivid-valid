@@ -9,7 +9,7 @@ const SMTPConnection = require("smtp-connection");
 const { promisify } = require("util");
 
 // Cache for DNS and domain reputation results (5 minute TTL)
-const cache = new NodeCache({ stdTTL: 300 });
+const cache = new NodeCache({ stdTTL: parseInt(process.env.DNS_CACHE_TTL) });
 
 class EmailValidator {
   constructor(options = {}) {
@@ -29,10 +29,10 @@ class EmailValidator {
       allowComments: options.allowComments !== false,
 
       // SMTP options
-      smtpTimeout: options.smtpTimeout || 5000,
-      smtpFromDomain: options.smtpFromDomain || "validator.example.com",
-      smtpPort: options.smtpPort || 25,
-      smtpSecure: options.smtpSecure || false,
+      smtpTimeout: options.smtpTimeout || parseInt(process.env.SMTP_TIMEOUT),
+      smtpFromDomain: options.smtpFromDomain || process.env.SMTP_FROM_DOMAIN,
+      smtpPort: options.smtpPort || parseInt(process.env.SMTP_PORT),
+      smtpSecure: options.smtpSecure || process.env.SMTP_SECURE === "true",
 
       // Hardcore validation features
       enableStrictSMTP: options.enableStrictSMTP !== false,
@@ -294,11 +294,21 @@ class EmailValidator {
       } else if (!result.mx_found) {
         result.status = "invalid";
         result.reason = "Domain cannot receive emails (no MX records)";
-      } else if (result.score >= (this.options.strictScoring ? 90 : 85)) {
+      } else if (
+        result.score >=
+        (this.options.strictScoring
+          ? parseInt(process.env.STRICT_MODE_SCORE_THRESHOLD)
+          : parseInt(process.env.NORMAL_MODE_SCORE_THRESHOLD))
+      ) {
         // Even higher threshold for strict mode
         result.status = "valid";
         result.reason = "Email appears to be valid and deliverable";
-      } else if (result.score >= (this.options.strictScoring ? 70 : 65)) {
+      } else if (
+        result.score >=
+        (this.options.strictScoring
+          ? parseInt(process.env.STRICT_MODE_RISKY_THRESHOLD)
+          : parseInt(process.env.NORMAL_MODE_RISKY_THRESHOLD))
+      ) {
         // Higher threshold for strict mode
         result.status = "risky";
         result.reason = "Email may be risky - proceed with caution";
@@ -472,11 +482,15 @@ class EmailValidator {
             tlsSupported,
             isCatchAll,
           });
-        }, this.options.smtpTimeout);
+        }, this.options.smtpTimeout || parseInt(process.env.SMTP_TIMEOUT));
 
-        socket.connect(this.options.smtpPort, primaryMX, () => {
-          // Connected successfully, wait for greeting
-        });
+        socket.connect(
+          this.options.smtpPort || parseInt(process.env.SMTP_PORT),
+          primaryMX,
+          () => {
+            // Connected successfully, wait for greeting
+          }
+        );
 
         socket.on("data", (data) => {
           const response = data.toString().trim();
@@ -493,11 +507,19 @@ class EmailValidator {
 
           if (step === 0 && response.startsWith("220")) {
             // Received greeting, send HELO
-            socket.write(`HELO ${this.options.smtpFromDomain}\r\n`);
+            socket.write(
+              `HELO ${
+                this.options.smtpFromDomain || process.env.SMTP_FROM_DOMAIN
+              }\r\n`
+            );
             step = 1;
           } else if (step === 1 && response.startsWith("250")) {
             // HELO accepted, send MAIL FROM
-            socket.write(`MAIL FROM:<test@${this.options.smtpFromDomain}>\r\n`);
+            socket.write(
+              `MAIL FROM:<test@${
+                this.options.smtpFromDomain || process.env.SMTP_FROM_DOMAIN
+              }>\r\n`
+            );
             step = 2;
           } else if (step === 2 && response.startsWith("250")) {
             // MAIL FROM accepted, send RCPT TO
@@ -720,16 +742,17 @@ class EmailValidator {
     let score = 0;
 
     // Syntax (25 points) - Increased weight
-    if (result.syntax_valid) score += 25;
+    if (result.syntax_valid) score += parseInt(process.env.SYNTAX_WEIGHT);
 
     // Domain (20 points)
-    if (result.domain_valid) score += 20;
+    if (result.domain_valid) score += parseInt(process.env.DOMAIN_WEIGHT);
 
     // MX Records (25 points)
-    if (result.mx_found) score += 25;
+    if (result.mx_found) score += parseInt(process.env.MX_WEIGHT);
 
     // SMTP (20 points) - Increased weight
-    if (result.smtp_deliverable === true) score += 20;
+    if (result.smtp_deliverable === true)
+      score += parseInt(process.env.SMTP_WEIGHT);
     else if (result.smtp_deliverable === null) score += 5; // Reduced for uncertainty
 
     // Domain health (15 points) - Increased weight
@@ -747,11 +770,21 @@ class EmailValidator {
     }
 
     // Penalties (stricter)
-    const disposablePenalty = this.options.strictScoring ? 50 : 40;
-    const blacklistedPenalty = this.options.strictScoring ? 60 : 50;
-    const roleBasedPenalty = this.options.strictScoring ? 25 : 15;
-    const freeProviderPenalty = this.options.strictScoring ? 10 : 5;
-    const typoPenalty = this.options.strictScoring ? 25 : 15;
+    const disposablePenalty = this.options.strictScoring
+      ? parseInt(process.env.DISPOSABLE_PENALTY_STRICT)
+      : parseInt(process.env.DISPOSABLE_PENALTY);
+    const blacklistedPenalty = this.options.strictScoring
+      ? parseInt(process.env.BLACKLISTED_PENALTY_STRICT)
+      : parseInt(process.env.BLACKLISTED_PENALTY);
+    const roleBasedPenalty = this.options.strictScoring
+      ? parseInt(process.env.ROLE_BASED_PENALTY_STRICT)
+      : parseInt(process.env.ROLE_BASED_PENALTY);
+    const freeProviderPenalty = this.options.strictScoring
+      ? parseInt(process.env.FREE_PROVIDER_PENALTY_STRICT)
+      : parseInt(process.env.FREE_PROVIDER_PENALTY);
+    const typoPenalty = this.options.strictScoring
+      ? parseInt(process.env.TYPO_PENALTY_STRICT)
+      : parseInt(process.env.TYPO_PENALTY);
 
     if (result.disposable) score -= disposablePenalty;
     if (result.domainHealth.blacklisted) score -= blacklistedPenalty;

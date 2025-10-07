@@ -7,36 +7,41 @@ require("dotenv").config();
 const emailRoutes = require("./src/routes/emailRoutes");
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
+const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS);
+const RATE_LIMIT_MAX_REQUESTS = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS);
 
 // Security middleware
 app.use(helmet());
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.CORS_ORIGIN,
+  process.env.CORS_ORIGIN_2,
+  process.env.CORS_ORIGIN_3,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [
-      process.env.FRONTEND_URL,
-      "http://localhost:3000",
-      "http://localhost:8080",
-      "http://localhost:5173",
-    ].filter(Boolean),
+    origin: allowedOrigins.length > 0 ? allowedOrigins : false,
     credentials: true,
   })
 );
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: RATE_LIMIT_MAX_REQUESTS,
   message: {
     error: "Too many requests from this IP, please try again later.",
-    retryAfter: 900,
+    retryAfter: Math.ceil(RATE_LIMIT_WINDOW_MS / 1000),
   },
 });
 
 app.use(limiter);
 
 // Body parsing middleware
-app.use(express.json({ limit: "10mb" }));
+const MAX_FILE_SIZE = process.env.VITE_MAX_FILE_SIZE || "10485760"; // Default 10MB in bytes
+app.use(express.json({ limit: MAX_FILE_SIZE }));
 app.use(express.urlencoded({ extended: true }));
 
 // Health check endpoint
@@ -75,5 +80,4 @@ app.listen(PORT, () => {
   console.log(`🚀 Vivid Valid Email Validator API running on port ${PORT}`);
   console.log(`📧 Ready to validate emails with world-class accuracy!`);
 });
-
 module.exports = app;
