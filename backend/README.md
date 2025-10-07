@@ -57,7 +57,7 @@ World's most accurate email validation backend built with Node.js, implementing 
 ### Prerequisites
 
 - Node.js >= 18.0.0
-- npm or yarn
+- pnpm
 
 ### Setup
 
@@ -69,38 +69,38 @@ World's most accurate email validation backend built with Node.js, implementing 
 
 2. **Install dependencies**
 
-   ```bash
-   npm install
-   ```
+    ```bash
+    pnpm install
+    ```
 
 3. **Create environment file**
 
-   ```bash
-   cp .env.example .env
-   ```
+    ```bash
+    cp .env.example .env
+    ```
 
 4. **Configure environment variables**
 
-   ```env
-   PORT=3001
-   NODE_ENV=development
-   SMTP_TIMEOUT=5000
-   SMTP_FROM_DOMAIN=validator.example.com
-   ENABLE_CACHE=true
-   CACHE_TTL=300
-   RATE_LIMIT_WINDOW=900000
-   RATE_LIMIT_MAX=100
-   ```
+    ```env
+    PORT=3001
+    NODE_ENV=development
+    SMTP_TIMEOUT=5000
+    SMTP_FROM_DOMAIN=validator.example.com
+    ENABLE_CACHE=true
+    CACHE_TTL=300
+    RATE_LIMIT_WINDOW_MS=60000
+    RATE_LIMIT_MAX_REQUESTS=100
+    ```
 
 5. **Start the server**
-   ```bash
-   npm start
-   ```
+    ```bash
+    pnpm start
+    ```
 
 For development with auto-reload:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ## 🔧 Configuration
@@ -369,25 +369,25 @@ Check domain health and security configuration.
 ### Unit Tests
 
 ```bash
-npm test
+pnpm test
 ```
 
 ### Integration Tests
 
 ```bash
-npm run test:integration
+pnpm run test:integration
 ```
 
 ### Performance Tests
 
 ```bash
-npm run test:performance
+pnpm run test:performance
 ```
 
 ### Test Coverage
 
 ```bash
-npm run test:coverage
+pnpm run test:coverage
 ```
 
 ## 📊 Performance

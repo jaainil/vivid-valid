@@ -70,7 +70,7 @@ const options = {
 ### Prerequisites
 
 - Node.js >= 18.0.0
-- npm or yarn
+- pnpm
 
 ### Setup
 
@@ -83,33 +83,33 @@ const options = {
 
 2. **Install Backend Dependencies**
 
-   ```bash
-   cd backend
-   npm install
-   ```
+ ```bash
+ cd backend
+ pnpm install
+ ```
 
 3. **Install Frontend Dependencies**
 
-   ```bash
-   cd ..
-   npm install
-   ```
+ ```bash
+ cd ..
+ pnpm install
+ ```
 
 4. **Start the Backend Server**
 
-   ```bash
-   cd backend
-   npm start
-   ```
+ ```bash
+ cd backend
+ pnpm start
+ ```
 
-   Backend will run on `http://localhost:3001`
+ Backend will run on `http://localhost:3001`
 
 5. **Start the Frontend Development Server**
-   ```bash
-   cd ..
-   npm run dev
-   ```
-   Frontend will run on `http://localhost:5173`
+ ```bash
+ cd ..
+ pnpm dev
+ ```
+ Frontend will run on `http://localhost:5173`
 
 ## 🔧 Configuration
 
@@ -216,13 +216,13 @@ console.log(result);
 
 ```bash
 cd backend
-npm test
+pnpm test
 ```
 
 ### Frontend Tests
 
 ```bash
-npm test
+pnpm test
 ```
 
 ### Manual Testing
