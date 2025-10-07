@@ -10,15 +10,15 @@ const rateLimit = require("express-rate-limit");
 
 // Rate limiting for single email validation
 const singleEmailLimiter = rateLimit({
-  windowMs: 60000, // 1 minute
-  max: 20, // 20 requests per minute
+  windowMs: parseInt(process.env.SINGLE_EMAIL_RATE_WINDOW_MS) || 60000,
+  max: parseInt(process.env.SINGLE_EMAIL_RATE_MAX) || 20,
   message: { error: "Too many validation requests. Please wait a moment." },
 });
 
 // Rate limiting for bulk validation (more restrictive)
 const bulkEmailLimiter = rateLimit({
-  windowMs: 300000, // 5 minutes
-  max: 3, // 3 requests per 5 minutes
+  windowMs: parseInt(process.env.BULK_EMAIL_RATE_WINDOW_MS) || 300000,
+  max: parseInt(process.env.BULK_EMAIL_RATE_MAX) || 3,
   message: {
     error: "Bulk validation rate limit exceeded. Please wait 5 minutes.",
   },
@@ -66,7 +66,7 @@ router.post("/validate-bulk", bulkEmailLimiter, async (req, res) => {
       });
     }
 
-    const maxBulkEmails = 1000; // Hardcoded limit
+    const maxBulkEmails = parseInt(process.env.MAX_BULK_EMAILS) || 1000;
     if (emails.length > maxBulkEmails) {
       return res.status(400).json({
         error: `Maximum ${maxBulkEmails} emails allowed per bulk request`,

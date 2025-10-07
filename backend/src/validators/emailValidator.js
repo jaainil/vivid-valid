@@ -9,7 +9,9 @@ const SMTPConnection = require("smtp-connection");
 const { promisify } = require("util");
 
 // Cache for DNS and domain reputation results (5 minute TTL)
-const cache = new NodeCache({ stdTTL: parseInt(process.env.DNS_CACHE_TTL) });
+const cache = new NodeCache({
+  stdTTL: parseInt(process.env.DNS_CACHE_TTL) || 300,
+});
 
 class EmailValidator {
   constructor(options = {}) {
@@ -29,9 +31,13 @@ class EmailValidator {
       allowComments: options.allowComments !== false,
 
       // SMTP options
-      smtpTimeout: options.smtpTimeout || parseInt(process.env.SMTP_TIMEOUT),
-      smtpFromDomain: options.smtpFromDomain || process.env.SMTP_FROM_DOMAIN,
-      smtpPort: options.smtpPort || parseInt(process.env.SMTP_PORT),
+      smtpTimeout:
+        options.smtpTimeout || parseInt(process.env.SMTP_TIMEOUT) || 5000,
+      smtpFromDomain:
+        options.smtpFromDomain ||
+        process.env.SMTP_FROM_DOMAIN ||
+        "validator.example.com",
+      smtpPort: options.smtpPort || parseInt(process.env.SMTP_PORT) || 25,
       smtpSecure: options.smtpSecure || process.env.SMTP_SECURE === "true",
 
       // Hardcore validation features
@@ -297,8 +303,8 @@ class EmailValidator {
       } else if (
         result.score >=
         (this.options.strictScoring
-          ? parseInt(process.env.STRICT_MODE_SCORE_THRESHOLD)
-          : parseInt(process.env.NORMAL_MODE_SCORE_THRESHOLD))
+          ? parseInt(process.env.STRICT_MODE_SCORE_THRESHOLD) || 90
+          : parseInt(process.env.NORMAL_MODE_SCORE_THRESHOLD) || 85)
       ) {
         // Even higher threshold for strict mode
         result.status = "valid";
@@ -306,8 +312,8 @@ class EmailValidator {
       } else if (
         result.score >=
         (this.options.strictScoring
-          ? parseInt(process.env.STRICT_MODE_RISKY_THRESHOLD)
-          : parseInt(process.env.NORMAL_MODE_RISKY_THRESHOLD))
+          ? parseInt(process.env.STRICT_MODE_RISKY_THRESHOLD) || 70
+          : parseInt(process.env.NORMAL_MODE_RISKY_THRESHOLD) || 65)
       ) {
         // Higher threshold for strict mode
         result.status = "risky";
@@ -482,10 +488,10 @@ class EmailValidator {
             tlsSupported,
             isCatchAll,
           });
-        }, this.options.smtpTimeout || parseInt(process.env.SMTP_TIMEOUT));
+        }, this.options.smtpTimeout || parseInt(process.env.SMTP_TIMEOUT) || 5000);
 
         socket.connect(
-          this.options.smtpPort || parseInt(process.env.SMTP_PORT),
+          this.options.smtpPort || parseInt(process.env.SMTP_PORT) || 25,
           primaryMX,
           () => {
             // Connected successfully, wait for greeting
@@ -509,7 +515,9 @@ class EmailValidator {
             // Received greeting, send HELO
             socket.write(
               `HELO ${
-                this.options.smtpFromDomain || process.env.SMTP_FROM_DOMAIN
+                this.options.smtpFromDomain ||
+                process.env.SMTP_FROM_DOMAIN ||
+                "validator.example.com"
               }\r\n`
             );
             step = 1;
@@ -517,7 +525,9 @@ class EmailValidator {
             // HELO accepted, send MAIL FROM
             socket.write(
               `MAIL FROM:<test@${
-                this.options.smtpFromDomain || process.env.SMTP_FROM_DOMAIN
+                this.options.smtpFromDomain ||
+                process.env.SMTP_FROM_DOMAIN ||
+                "validator.example.com"
               }>\r\n`
             );
             step = 2;
@@ -742,17 +752,17 @@ class EmailValidator {
     let score = 0;
 
     // Syntax (25 points) - Increased weight
-    if (result.syntax_valid) score += parseInt(process.env.SYNTAX_WEIGHT);
+    if (result.syntax_valid) score += parseInt(process.env.SYNTAX_WEIGHT) || 25;
 
     // Domain (20 points)
-    if (result.domain_valid) score += parseInt(process.env.DOMAIN_WEIGHT);
+    if (result.domain_valid) score += parseInt(process.env.DOMAIN_WEIGHT) || 20;
 
     // MX Records (25 points)
-    if (result.mx_found) score += parseInt(process.env.MX_WEIGHT);
+    if (result.mx_found) score += parseInt(process.env.MX_WEIGHT) || 25;
 
     // SMTP (20 points) - Increased weight
     if (result.smtp_deliverable === true)
-      score += parseInt(process.env.SMTP_WEIGHT);
+      score += parseInt(process.env.SMTP_WEIGHT) || 20;
     else if (result.smtp_deliverable === null) score += 5; // Reduced for uncertainty
 
     // Domain health (15 points) - Increased weight
@@ -771,20 +781,20 @@ class EmailValidator {
 
     // Penalties (stricter)
     const disposablePenalty = this.options.strictScoring
-      ? parseInt(process.env.DISPOSABLE_PENALTY_STRICT)
-      : parseInt(process.env.DISPOSABLE_PENALTY);
+      ? parseInt(process.env.DISPOSABLE_PENALTY_STRICT) || 50
+      : parseInt(process.env.DISPOSABLE_PENALTY) || 40;
     const blacklistedPenalty = this.options.strictScoring
-      ? parseInt(process.env.BLACKLISTED_PENALTY_STRICT)
-      : parseInt(process.env.BLACKLISTED_PENALTY);
+      ? parseInt(process.env.BLACKLISTED_PENALTY_STRICT) || 60
+      : parseInt(process.env.BLACKLISTED_PENALTY) || 50;
     const roleBasedPenalty = this.options.strictScoring
-      ? parseInt(process.env.ROLE_BASED_PENALTY_STRICT)
-      : parseInt(process.env.ROLE_BASED_PENALTY);
+      ? parseInt(process.env.ROLE_BASED_PENALTY_STRICT) || 25
+      : parseInt(process.env.ROLE_BASED_PENALTY) || 15;
     const freeProviderPenalty = this.options.strictScoring
-      ? parseInt(process.env.FREE_PROVIDER_PENALTY_STRICT)
-      : parseInt(process.env.FREE_PROVIDER_PENALTY);
+      ? parseInt(process.env.FREE_PROVIDER_PENALTY_STRICT) || 10
+      : parseInt(process.env.FREE_PROVIDER_PENALTY) || 5;
     const typoPenalty = this.options.strictScoring
-      ? parseInt(process.env.TYPO_PENALTY_STRICT)
-      : parseInt(process.env.TYPO_PENALTY);
+      ? parseInt(process.env.TYPO_PENALTY_STRICT) || 25
+      : parseInt(process.env.TYPO_PENALTY) || 15;
 
     if (result.disposable) score -= disposablePenalty;
     if (result.domainHealth.blacklisted) score -= blacklistedPenalty;
@@ -1019,4 +1029,5 @@ class EmailValidator {
     return normalized;
   }
 }
+
 module.exports = EmailValidator;

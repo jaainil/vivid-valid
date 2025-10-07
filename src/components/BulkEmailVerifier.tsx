@@ -50,8 +50,8 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
     const text = await file.text();
     const emails: string[] = [];
 
-    // Hardcoded supported file types
-    const supportedFileTypes = [".csv", ".txt"];
+    // Use environment variables for supported file types
+    const supportedFileTypes = (import.meta.env.VITE_SUPPORTED_FILE_TYPES || ".csv,.txt").split(",");
     const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
 
     if (!supportedFileTypes.includes(fileExtension)) {
@@ -166,8 +166,8 @@ export const BulkEmailVerifier = ({ onResults }: BulkEmailVerifierProps) => {
   };
 
   const handleFileSelect = (file: File) => {
-    const maxFileSize = 10485760; // 10MB hardcoded
-    const supportedFileTypes = [".csv", ".txt"]; // Hardcoded supported types
+    const maxFileSize = parseInt(import.meta.env.VITE_MAX_FILE_SIZE) || 10485760; // Use environment variable
+    const supportedFileTypes = (import.meta.env.VITE_SUPPORTED_FILE_TYPES || ".csv,.txt").split(","); // Use environment variable
     const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
 
     if (file.size > maxFileSize) {

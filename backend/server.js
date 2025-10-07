@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+// Load environment variables
 require("dotenv").config();
 
 const emailRoutes = require("./src/routes/emailRoutes");
@@ -9,28 +10,30 @@ const emailRoutes = require("./src/routes/emailRoutes");
 const app = express();
 
 // ========================================
-// HARDCODED CONFIGURATION - NO .ENV NEEDED
+// ENVIRONMENT CONFIGURATION
 // ========================================
 
 // Server Configuration
-const PORT = 3001;
-const NODE_ENV = "production";
-const LOG_LEVEL = "info";
+const PORT = parseInt(process.env.PORT) || parseInt(process.env.DEFAULT_PORT) || 3123;
+const NODE_ENV = process.env.NODE_ENV || "development";
+const LOG_LEVEL = process.env.LOG_LEVEL || "info";
 
 // CORS Configuration
-const FRONTEND_URL = "http://localhost:8080";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8080";
 const CORS_ORIGINS = [
-  "http://localhost:8080",
-  "http://localhost:3000",
-  "http://localhost:5173",
+  process.env.CORS_ORIGIN || "http://localhost:8080",
+  process.env.CORS_ORIGIN_2 || "http://localhost:3000",
+  process.env.CORS_ORIGIN_3 || "http://localhost:5173",
 ].filter(Boolean);
 
 // Rate Limiting
-const RATE_LIMIT_WINDOW_MS = 60000;
-const RATE_LIMIT_MAX_REQUESTS = 100;
+const RATE_LIMIT_WINDOW_MS =
+  parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60000;
+const RATE_LIMIT_MAX_REQUESTS =
+  parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100;
 
 // File Upload Limits
-const MAX_FILE_SIZE = "10485760"; // 10MB
+const MAX_FILE_SIZE = process.env.MAX_FILE_SIZE || "10485760"; // 10MB
 
 // Security middleware
 app.use(helmet());

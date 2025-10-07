@@ -2,13 +2,16 @@ const EmailValidator = require("./emailValidator");
 const NodeCache = require("node-cache");
 
 // Cache for bulk validation results (30 minute TTL)
-const cache = new NodeCache({ stdTTL: parseInt(process.env.BULK_CACHE_TTL) });
+const cache = new NodeCache({
+  stdTTL: parseInt(process.env.BULK_CACHE_TTL) || 1800,
+});
 
 class BulkValidator {
   constructor(options = {}) {
     this.options = {
-      maxConcurrency: options.maxConcurrency || parseInt(process.env.MAX_CONCURRENCY),
-      batchSize: options.batchSize || parseInt(process.env.BATCH_SIZE),
+      maxConcurrency:
+        options.maxConcurrency || parseInt(process.env.MAX_CONCURRENCY) || 10,
+      batchSize: options.batchSize || parseInt(process.env.BATCH_SIZE) || 25,
       progressCallback: options.progressCallback || null,
       enableCache: options.enableCache !== false,
       skipDuplicates: options.skipDuplicates !== false,
@@ -67,7 +70,9 @@ class BulkValidator {
 
         // Small delay between batches to prevent overwhelming
         if (i + this.options.batchSize < uniqueEmails.length) {
-          await new Promise((resolve) => setTimeout(resolve, parseInt(process.env.BATCH_DELAY_MS)));
+          await new Promise((resolve) =>
+            setTimeout(resolve, parseInt(process.env.BATCH_DELAY_MS) || 100)
+          );
         }
       } catch (error) {
         console.error(
@@ -445,7 +450,6 @@ class BulkValidator {
     if (emailsPerSecond > 50) return "excellent";
     if (emailsPerSecond > 20) return "good";
     if (emailsPerSecond > 10) return "fair";
-    return "poor";
   }
 }
 
