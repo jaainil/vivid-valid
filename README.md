@@ -160,8 +160,9 @@ The `nixpacks.toml` file is configured for:
 - **Node.js 18.x** runtime
 - **Frontend**: React/Vite build served on port 8080
 - **Backend**: Express.js API on port 3001
-- **PNPM** package manager
+- **PNPM** package manager for both root and backend
 - **Static asset serving** for the built frontend
+- **Multi-stage build** process with proper dependency management
 
 ### Environment Variables
 

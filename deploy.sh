@@ -21,14 +21,14 @@ check_nixpacks() {
 install_deps() {
     echo "📦 Installing dependencies..."
     npm install -g pnpm
-    pnpm install
-    cd backend && pnpm install && cd ..
 }
 
 # Function to build the application
 build_app() {
     echo "🔨 Building application..."
+    pnpm install
     npm run build
+    cd backend && pnpm install && cd ..
 }
 
 # Function to test nixpacks build locally
