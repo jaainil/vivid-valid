@@ -19,8 +19,15 @@ COPY . .
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && adduser -S frontend -u 1001
 
+# Create temp directory for Vite with proper permissions
+RUN mkdir -p /tmp/vite-temp && chown -R frontend:nodejs /tmp/vite-temp
+
 # Change ownership of the app directory to the frontend user
 RUN chown -R frontend:nodejs /app
+
+# Set environment variables for temp directory
+ENV TMPDIR=/tmp/vite-temp
+
 USER frontend
 
 # Expose port

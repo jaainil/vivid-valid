@@ -24,11 +24,11 @@ RUN chown -R backend:nodejs /app
 USER backend
 
 # Expose port
-EXPOSE 3001
+EXPOSE 5000
 
 # Health check script
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:${PORT:-3001}/health || exit 1
+  CMD wget --quiet --tries=1 --spider http://localhost:${PORT:-5000}/health || exit 1
 
 # Start the application
 CMD ["pnpm", "start"]
