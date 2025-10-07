@@ -1,0 +1,50 @@
+# Development files
+.git/
+.github/
+.vscode/
+.idea/
+
+# Documentation
+*.md
+!README.md
+
+# Testing
+test/
+tests/
+*.test.js
+*.spec.js
+coverage/
+.nyc_output/
+
+# Development dependencies (npm ci handles this)
+node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp/
+temp/
+
+# Frontend files (not needed in backend)
+../src/
+../public/
+../dist/
+../*.config.js
+../*.config.ts

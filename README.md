@@ -65,6 +65,25 @@ const options = {
 };
 ```
 
+## 🚀 Deployment
+
+### Railway/Railpack.com (Recommended)
+
+This project is optimized for deployment on [Railway](https://railway.app) (railpack.com). See [`RAILWAY_DEPLOYMENT.md`](./RAILWAY_DEPLOYMENT.md) for complete deployment instructions.
+
+**Quick Deploy:**
+1. Fork this repository
+2. Create a Railway project from GitHub
+3. Deploy backend service from `/backend` directory
+4. Deploy frontend service from root directory
+5. Configure environment variables (see deployment guide)
+
+**Configuration Files:**
+- [`railway.json`](./railway.json) - Railway project configuration
+- [`nixpacks.toml`](./nixpacks.toml) - Frontend build configuration
+- [`backend/nixpacks.toml`](./backend/nixpacks.toml) - Backend build configuration
+- [`.railwayignore`](./.railwayignore) - Files to exclude from deployment
+
 ## 📦 Installation
 
 ### Prerequisites

@@ -7,7 +7,9 @@ require("dotenv").config();
 const emailRoutes = require("./src/routes/emailRoutes");
 
 const app = express();
+// Railway provides PORT dynamically, fallback to 3001 for local development
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Security middleware
 app.use(helmet());
@@ -71,9 +73,11 @@ app.use("*", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Vivid Valid Email Validator API running on port ${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Vivid Valid Email Validator API running on ${HOST}:${PORT}`);
   console.log(`📧 Ready to validate emails with world-class accuracy!`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'not configured'}`);
 });
 
 module.exports = app;
