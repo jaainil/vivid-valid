@@ -61,7 +61,7 @@ The validator now includes a **Strict Mode** that enables maximum validation str
 // Frontend - Toggle strict mode with UI switch
 // Backend - Automatically enabled when useStrictMode: true
 const options = {
-  useStrictMode: true  // Enables all strict features
+  useStrictMode: true, // Enables all strict features
 };
 ```
 
@@ -271,6 +271,91 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For support, please open an issue in the GitHub repository or contact the development team.
+
+## 🚀 Railpack Deployment
+
+This project is fully configured for deployment on [Railpack.com](https://railpack.com), a modern platform for deploying web applications.
+
+### Quick Deploy to Railpack
+
+1. **Push your code to GitHub**
+
+2. **Connect your repository to Railpack**
+
+   - Go to [Railpack.com](https://railpack.com)
+   - Click "New Project"
+   - Connect your GitHub repository
+   - Select the "vivid-valid" repository
+
+3. **Configure Environment Variables**
+   Railpack will automatically use the `.env.railpack` file, but you can override these settings in the Railpack dashboard:
+
+   ```env
+   PORT=3001
+   NODE_ENV=production
+   SMTP_TIMEOUT=5000
+   SMTP_FROM_DOMAIN=vivid-valid.railway.app
+   ENABLE_CACHE=true
+   CACHE_TTL=300
+   RATE_LIMIT_WINDOW=900000
+   RATE_LIMIT_MAX=100
+   VITE_API_BASE_URL=https://your-app-url.railway.app/api
+   ```
+
+4. **Deploy**
+   - Click "Deploy" and Railpack will automatically build and deploy your application
+   - The deployment includes both frontend and backend services
+
+### Railpack Configuration
+
+The project includes a [`railpack.config.js`](railpack.config.js) file that configures:
+
+- **Frontend**: Built with Vite and served via Nginx
+- **Backend**: Node.js Express API server
+- **Environment Variables**: Automatic configuration for production
+- **Health Checks**: `/health` endpoint for monitoring
+- **Optimization**: Compression, caching, and minification
+
+### Manual Deployment Commands
+
+If you prefer to deploy manually using the Railpack CLI:
+
+```bash
+# Install Railpack CLI
+npm install -g @railpack/cli
+
+# Build for Railpack
+npm run railpack:build
+
+# Deploy to Railpack
+npm run railpack:deploy
+
+# Run in development mode with Railpack
+npm run railpack:dev
+```
+
+### Environment-Specific Configurations
+
+- **Development**: Uses local backend on `http://localhost:3001`
+- **Production**: Uses deployed API endpoints with proper environment variables
+- **API Configuration**: Frontend automatically detects environment and adjusts API URLs
+
+### Monitoring and Health Checks
+
+Railpack automatically monitors your application using:
+
+- **Health Endpoint**: `/health` for backend health
+- **Frontend Health**: Nginx health checks
+- **Automatic Restarts**: Failed services are automatically restarted
+- **Logs**: Centralized logging through Railpack dashboard
+
+### Scaling
+
+Railpack supports automatic scaling:
+
+- **Horizontal Scaling**: Multiple instances based on load
+- **Load Balancing**: Built-in load balancer
+- **Database Scaling**: Easy integration with managed databases
 
 ---
 

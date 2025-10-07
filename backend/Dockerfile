@@ -20,12 +20,17 @@ RUN addgroup -g 1001 -S nodejs && adduser -S backend -u 1001
 RUN chown -R backend:nodejs /app
 USER backend
 
-# Expose port
+# Expose port (Railpack will set PORT environment variable)
 EXPOSE 3001
 
 # Health check script
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:3001/health || exit 1
+  CMD wget --quiet --tries=1 --spider http://localhost:${PORT:-3001}/health || exit 1
 
 # Start the application
 CMD ["npm", "start"]
+
+# Railpack labels
+LABEL railpack.service="backend"
+LABEL railpack.port="3001"
+LABEL railpack.health-check="/health"

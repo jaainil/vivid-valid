@@ -1,5 +1,15 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+// API Base URL configuration for different environments
+const getApiBaseUrl = () => {
+  // Check if we're in production environment
+  if (import.meta.env.PROD) {
+    // In production, use the deployed API URL
+    return import.meta.env.VITE_API_BASE_URL || "/api";
+  }
+  // In development, use local backend
+  return import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Add error logging to debug frontend issues
 console.log("Email validator API URL:", API_BASE_URL);
@@ -142,7 +152,12 @@ async function apiCall<T>(
 export const testBackendConnection = async (): Promise<boolean> => {
   try {
     console.log("Testing backend connection...");
-    const response = await fetch("http://localhost:3001/health", {
+    // Use the appropriate health endpoint based on environment
+    const healthUrl = import.meta.env.PROD
+      ? `${API_BASE_URL.replace("/api", "")}/health`
+      : "http://localhost:3001/health";
+
+    const response = await fetch(healthUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
