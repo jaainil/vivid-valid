@@ -7,18 +7,34 @@ require("dotenv").config();
 const emailRoutes = require("./src/routes/emailRoutes");
 
 const app = express();
-const PORT = process.env.PORT;
-const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS);
-const RATE_LIMIT_MAX_REQUESTS = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS);
+
+// ========================================
+// HARDCODED CONFIGURATION - NO .ENV NEEDED
+// ========================================
+
+// Server Configuration
+const PORT = 3001;
+const NODE_ENV = "production";
+const LOG_LEVEL = "info";
+
+// CORS Configuration
+const FRONTEND_URL = "http://localhost:8080";
+const CORS_ORIGINS = [
+  "http://localhost:8080",
+  "http://localhost:3000",
+  "http://localhost:5173",
+].filter(Boolean);
+
+// Rate Limiting
+const RATE_LIMIT_WINDOW_MS = 60000;
+const RATE_LIMIT_MAX_REQUESTS = 100;
+
+// File Upload Limits
+const MAX_FILE_SIZE = "10485760"; // 10MB
 
 // Security middleware
 app.use(helmet());
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  process.env.CORS_ORIGIN,
-  process.env.CORS_ORIGIN_2,
-  process.env.CORS_ORIGIN_3,
-].filter(Boolean);
+const allowedOrigins = CORS_ORIGINS;
 
 app.use(
   cors({
@@ -40,7 +56,6 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Body parsing middleware
-const MAX_FILE_SIZE = process.env.VITE_MAX_FILE_SIZE || "10485760"; // Default 10MB in bytes
 app.use(express.json({ limit: MAX_FILE_SIZE }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -61,10 +76,7 @@ app.use((err, req, res, next) => {
   console.error("Error:", err);
   res.status(500).json({
     error: "Internal server error",
-    message:
-      process.env.NODE_ENV === "development"
-        ? err.message
-        : "Something went wrong",
+    message: NODE_ENV === "development" ? err.message : "Something went wrong",
   });
 });
 
@@ -79,5 +91,7 @@ app.use("*", (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Vivid Valid Email Validator API running on port ${PORT}`);
   console.log(`📧 Ready to validate emails with world-class accuracy!`);
+  console.log(`🌐 Frontend URL: ${FRONTEND_URL}`);
+  console.log(`⚙️ Environment: ${NODE_ENV}`);
 });
 module.exports = app;

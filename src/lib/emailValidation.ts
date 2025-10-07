@@ -1,10 +1,26 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const MAX_BULK_EMAILS = parseInt(import.meta.env.VITE_MAX_BULK_EMAILS);
-const MAX_FILE_SIZE = parseInt(import.meta.env.VITE_MAX_FILE_SIZE);
-const SUPPORTED_FILE_TYPES = import.meta.env.VITE_SUPPORTED_FILE_TYPES;
+// ========================================
+// HARDCODED CONFIGURATION - NO .ENV NEEDED
+// ========================================
 
-// Add error logging to debug frontend issues
-console.log("Email validator API URL:", API_BASE_URL);
+// API Configuration
+const API_BASE_URL = "http://backend:3001/api";
+const MAX_BULK_EMAILS = 1000;
+const MAX_FILE_SIZE = 10485760; // 10MB in bytes
+const SUPPORTED_FILE_TYPES = ".csv,.txt";
+
+// App Configuration
+const APP_NAME = "Email Verifier Pro";
+const APP_VERSION = "1.0.0";
+const APP_DESCRIPTION =
+  "The most advanced email verification tool with real-time validation, bulk processing, and beautiful progress animations";
+
+// Debug logging
+console.log("=== FRONTEND CONFIG ===");
+console.log("✅ API_BASE_URL:", API_BASE_URL);
+console.log("✅ MAX_BULK_EMAILS:", MAX_BULK_EMAILS);
+console.log("✅ MAX_FILE_SIZE:", MAX_FILE_SIZE);
+console.log("✅ SUPPORTED_FILE_TYPES:", SUPPORTED_FILE_TYPES);
+console.log("✅ APP_NAME:", APP_NAME);
 
 export interface EmailAnalysis {
   input: string;

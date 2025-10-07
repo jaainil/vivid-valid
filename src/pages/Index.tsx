@@ -76,11 +76,12 @@ const Index = () => {
           </div>
 
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-primary-glow to-success bg-clip-text text-transparent">
-            {import.meta.env.VITE_APP_NAME || "Email Verifier Pro"}
+            Email Verifier Pro
           </h1>
 
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            {import.meta.env.VITE_APP_DESCRIPTION || "The most advanced email verification tool with real-time validation, bulk processing, and beautiful progress animations"}
+            The most advanced email verification tool with real-time validation,
+            bulk processing, and beautiful progress animations
           </p>
         </div>
 
@@ -160,5 +161,3 @@ const Index = () => {
     </div>
   );
 };
-
-export default Index;
