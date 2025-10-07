@@ -3,7 +3,7 @@
 // ========================================
 
 // API Configuration
-const API_BASE_URL = "http://backend:3001/api";
+const API_BASE_URL = "http://localhost:3001/api";
 const MAX_BULK_EMAILS = 1000;
 const MAX_FILE_SIZE = 10485760; // 10MB in bytes
 const SUPPORTED_FILE_TYPES = ".csv,.txt";
