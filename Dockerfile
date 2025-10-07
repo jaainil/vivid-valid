@@ -3,6 +3,7 @@ FROM node:18-alpine AS base
 
 # Install curl for health checks and pnpm for package management
 RUN apk add --no-cache curl && \
+    SHELL=/bin/sh && \
     (curl -fsSL https://get.pnpm.io/install.sh | sh -)
 
 # Set up pnpm in PATH
