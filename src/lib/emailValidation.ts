@@ -101,52 +101,93 @@ export interface BulkValidationResult {
   };
 }
 
-// API call wrapper with error handling
+// API call wrapper with enhanced error handling and retry logic
 async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  try {
-    console.log("API Call:", `${API_BASE_URL}${endpoint}`, options);
+  const maxRetries = 3;
+  const retryDelay = 1000; // Start with 1 second delay
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-      ...options,
-    });
-
-    console.log("API Response status:", response.status, response.statusText);
-
-    if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({ error: "Network error" }));
-      console.error("API Error Response:", errorData);
-      throw new Error(
-        errorData.error || `HTTP ${response.status}: ${response.statusText}`
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(
+        `API Call (attempt ${attempt}):`,
+        `${API_BASE_URL}${endpoint}`
       );
-    }
 
-    const data = await response.json();
-    console.log("API Success Response:", data);
-    return data.data || data;
-  } catch (error) {
-    console.error("API call failed:", error);
-    throw error;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
+        signal: controller.signal,
+        ...options,
+      });
+
+      clearTimeout(timeoutId);
+      console.log("API Response status:", response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Network error" }));
+        console.error("API Error Response:", errorData);
+
+        // Don't retry on client errors (4xx)
+        if (response.status >= 400 && response.status < 500) {
+          throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+          );
+        }
+
+        // Retry on server errors (5xx) or network errors
+        if (attempt === maxRetries) {
+          throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+          );
+        }
+
+        // Wait before retrying
+        await new Promise((resolve) =>
+          setTimeout(resolve, retryDelay * attempt)
+        );
+        continue;
+      }
+
+      const data = await response.json();
+      console.log("API Success Response:", data);
+      return data.data || data;
+    } catch (error) {
+      console.error(`API call failed (attempt ${attempt}):`, error);
+
+      // If it's the last attempt or a non-retryable error, throw
+      if (attempt === maxRetries || error.name === "AbortError") {
+        throw error;
+      }
+
+      // Wait before retrying
+      await new Promise((resolve) => setTimeout(resolve, retryDelay * attempt));
+    }
   }
+
+  throw new Error("Max retries exceeded");
 }
 
-// Test backend connection
+// Test backend connection with proper environment handling
 export const testBackendConnection = async (): Promise<boolean> => {
   try {
     console.log("Testing backend connection...");
-    const response = await fetch("http://localhost:3001/health", {
+    const baseUrl = API_BASE_URL.replace("/api", "");
+    const response = await fetch(`${baseUrl}/health`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
+      signal: AbortSignal.timeout(5000), // 5 second timeout
     });
 
     if (response.ok) {

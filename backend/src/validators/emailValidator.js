@@ -459,11 +459,13 @@ class EmailValidator {
         let responses = [];
 
         const cleanup = () => {
+          socket.removeAllListeners();
           socket.destroy();
         };
 
         const timeout = setTimeout(() => {
-          cleanup();
+          socket.destroy();
+          clearTimeout(timeout);
           resolve({
             deliverable: false,
             reason: "SMTP connection timeout",

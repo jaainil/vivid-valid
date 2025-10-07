@@ -1,0 +1,78 @@
+version: "3.8"
+
+services:
+  # Full-stack application (frontend + backend in single container)
+  vivid-valid:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000" # Frontend (React app)
+      - "3001:3001" # Backend API
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - FRONTEND_URL=http://localhost:3000
+      - LOG_LEVEL=info
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:3001/health",
+          "&&",
+          "curl",
+          "-f",
+          "http://localhost:3000",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "app=vivid-valid"
+      - "component=fullstack"
+
+  # Alternative: Separate containers (for scaling or different environments)
+  # Uncomment below and comment out the above service if you prefer separate containers
+
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "3001:3001"
+  #   environment:
+  #     - NODE_ENV=production
+  #     - PORT=3001
+  #     - FRONTEND_URL=http://frontend:3000
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   labels:
+  #     - "app=vivid-valid"
+  #     - "component=backend"
+
+  # frontend:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.frontend
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - VITE_API_BASE_URL=http://localhost:3001/api
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - backend
+  #   labels:
+  #     - "app=vivid-valid"
+  #     - "component=frontend"
+
+networks:
+  default:
+    name: vivid-valid-network

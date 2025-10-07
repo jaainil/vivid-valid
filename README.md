@@ -268,6 +268,130 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **RFC Standards**: Internet Engineering Task Force for email specifications
 - **Node.js Ecosystem**: All the amazing packages that make this possible
 
+## 🚀 Production Deployment
+
+### Docker Deployment (Recommended)
+
+1. **Build and run with Docker Compose**:
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - FRONTEND_URL=https://yourdomain.com
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build: .
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_BASE_URL=https://yourdomain.com/api
+    depends_on:
+      - backend
+    restart: unless-stopped
+```
+
+2. **Deploy**:
+
+```bash
+docker-compose up -d
+```
+
+### Manual Deployment
+
+1. **Backend Setup**:
+
+```bash
+cd backend
+cp .env.example .env
+# Edit .env with production values
+NODE_ENV=production
+PORT=3001
+FRONTEND_URL=https://yourdomain.com
+
+npm ci --only=production
+npm run start
+```
+
+2. **Frontend Build**:
+
+```bash
+# Build for production
+npm run build
+
+# Serve with nginx or similar
+```
+
+3. **Nginx Configuration Example**:
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    # Frontend
+    location / {
+        proxy_pass http://localhost:5173;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # API Backend
+    location /api/ {
+        proxy_pass http://localhost:3001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+### Environment Variables for Production
+
+```env
+# Production Backend
+NODE_ENV=production
+PORT=3001
+FRONTEND_URL=https://yourdomain.com
+LOG_LEVEL=warn
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=1000
+SMTP_TIMEOUT=10000
+
+# Production Frontend
+VITE_API_BASE_URL=https://yourdomain.com/api
+```
+
+### Health Monitoring
+
+The application includes health check endpoints:
+
+- **Backend Health**: `GET /health`
+- **Frontend Health**: Check if the app loads successfully
+
+### Security Checklist
+
+- [ ] Set strong NODE_ENV=production
+- [ ] Configure proper CORS origins
+- [ ] Set up rate limiting for production load
+- [ ] Use HTTPS in production
+- [ ] Set up proper firewall rules
+- [ ] Configure log rotation
+- [ ] Set up monitoring and alerting
+- [ ] Regular dependency updates
+- [ ] Backup strategy for data
+
 ## 📞 Support
 
 For support, please open an issue in the GitHub repository or contact the development team.
