@@ -1,9 +1,11 @@
 # Multi-stage build for full-stack application
 FROM node:18-alpine AS base
 
+# Set SHELL environment variable for pnpm installer
+ENV SHELL=/bin/sh
+
 # Install curl for health checks and pnpm for package management
 RUN apk add --no-cache curl && \
-    SHELL=/bin/sh && \
     (curl -fsSL https://get.pnpm.io/install.sh | sh -)
 
 # Set up pnpm in PATH
