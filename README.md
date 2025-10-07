@@ -61,7 +61,7 @@ The validator now includes a **Strict Mode** that enables maximum validation str
 // Frontend - Toggle strict mode with UI switch
 // Backend - Automatically enabled when useStrictMode: true
 const options = {
-  useStrictMode: true  // Enables all strict features
+  useStrictMode: true, // Enables all strict features
 };
 ```
 
@@ -111,7 +111,69 @@ const options = {
    ```
    Frontend will run on `http://localhost:5173`
 
-## 🔧 Configuration
+## 🚢 Deployment with Nixpacks
+
+This project is configured for deployment with [Nixpacks](https://nixpacks.com), which automatically generates Docker images from your source code.
+
+### Prerequisites
+
+- Install Nixpacks CLI:
+
+```bash
+curl -sSL https://nixpacks.com/install.sh | bash
+```
+
+### Deploy with Nixpacks
+
+1. **Quick Deploy** (recommended):
+
+```bash
+nixpacks build
+```
+
+2. **Using the deployment script**:
+
+```bash
+# Install dependencies and build
+./deploy.sh install
+./deploy.sh build
+
+# Deploy
+./deploy.sh deploy
+
+# Full pipeline (install, build, test, deploy)
+./deploy.sh all
+```
+
+3. **Manual deployment with custom settings**:
+
+```bash
+nixpacks build --name vivid-valid \
+  --env NODE_ENV=production \
+  --env FRONTEND_URL=https://yourdomain.com
+```
+
+### Nixpacks Configuration
+
+The `nixpacks.toml` file is configured for:
+
+- **Node.js 18.x** runtime
+- **Frontend**: React/Vite build served on port 8080
+- **Backend**: Express.js API on port 3001
+- **PNPM** package manager
+- **Static asset serving** for the built frontend
+
+### Environment Variables
+
+Set these environment variables for production:
+
+```bash
+FRONTEND_URL=https://yourdomain.com
+NODE_ENV=production
+PORT=3001
+```
+
+## Configuration
 
 ### Backend Configuration
 
@@ -254,7 +316,7 @@ curl -X POST http://localhost:3001/api/email/validate-bulk \
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+3. Commit your changes (\`git commit -m 'Add some amazing feature'\`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 

@@ -1,0 +1,32 @@
+# Nixpacks configuration for Vivid Valid Email Validator
+[phases.setup]
+nixPkgs = ["nodejs-18_x", "npm-8_x"]
+
+[phases.install]
+cmds = [
+    "npm install -g pnpm",
+    "pnpm install"
+]
+
+[phases.build]
+cmds = [
+    "pnpm install",
+    "npm run build",
+    "cd backend && pnpm install"
+]
+
+[start]
+cmd = "sh -c 'cd backend && npm start & npx serve -s dist -l 8080'"
+
+[env]
+NODE_ENV = "production"
+FRONTEND_URL = "${{ secrets.FRONTEND_URL }}"
+PORT = "3001"
+
+[[services]]
+internalPort = 3001
+protocol = "tcp"
+
+[[services]]
+internalPort = 8080
+protocol = "tcp"

@@ -41,5 +41,5 @@ docker-compose.yml
 .git
 .gitignore
 
-# Backend
-backend/
+# Nixpacks
+nixpacks.toml
