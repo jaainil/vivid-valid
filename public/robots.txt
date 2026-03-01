@@ -1,12 +1,12 @@
 # Robots.txt for OpenMailValidator
-# https://openmailvalidator.com
+# https://algogist.com
 
 User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://openmailvalidator.com/sitemap.xml
-Sitemap: https://openmailvalidator.com/llm.txt
+Sitemap: https://algogist.com/sitemap.xml
+Sitemap: https://algogist.com/llm.txt
 
 # Host directive
-Host: https://openmailvalidator.com
+Host: https://algogist.com

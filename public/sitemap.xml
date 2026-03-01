@@ -7,11 +7,11 @@
          xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
   
   <url>
-    <loc>https://openmailvalidator.com/</loc>
+    <loc>https://algogist.com/</loc>
     <lastmod>2026-03-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://openmailvalidator.com/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://algogist.com/"/>
   </url>
   
 </urlset>
