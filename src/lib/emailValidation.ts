@@ -142,7 +142,9 @@ async function apiCall<T>(
 export const testBackendConnection = async (): Promise<boolean> => {
   try {
     console.log("Testing backend connection...");
-    const response = await fetch("http://localhost:3001/health", {
+    // Derive health URL from API_BASE_URL (strip trailing /api path if present)
+    const healthUrl = API_BASE_URL.replace(/\/api\/?$/, "") + "/health";
+    const response = await fetch(healthUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -211,9 +213,8 @@ export const validateEmailReal = async (
       suggestion: null,
       score: 0,
       status: "error",
-      reason: `Validation failed: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
+      reason: `Validation failed: ${error instanceof Error ? error.message : "Unknown error"
+        }`,
       factors: {
         format: false,
         domain: false,

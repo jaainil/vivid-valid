@@ -5,8 +5,6 @@ const NodeCache = require("node-cache");
 const DisposableDetector = require("./disposableDetector");
 const TypoCorrector = require("./typoCorrector");
 const RFCParser = require("./rfcParser");
-const SMTPConnection = require("smtp-connection");
-const { promisify } = require("util");
 
 // Cache for DNS and domain reputation results (5 minute TTL)
 const cache = new NodeCache({ stdTTL: 300 });
@@ -18,7 +16,14 @@ class EmailValidator {
       checkSyntax: options.checkSyntax !== false,
       checkDomain: options.checkDomain !== false,
       checkMX: options.checkMX !== false,
-      checkSMTP: options.checkSMTP !== false,
+
+      // SMTP check is DISABLED by default.
+      // Port 25 is blocked by ISPs, AWS, GCP, Azure, Railway, Vercel, and
+      // virtually every cloud/residential network as an anti-spam policy.
+      // Enable ONLY if your server has unrestricted outbound port 25 access.
+      // When disabled, smtp_deliverable is set to null (uncertain) in results.
+      checkSMTP: options.checkSMTP === true,
+
       checkDisposable: options.checkDisposable !== false,
       checkTypos: options.checkTypos !== false,
 
@@ -28,8 +33,9 @@ class EmailValidator {
       allowQuotedLocal: options.allowQuotedLocal !== false,
       allowComments: options.allowComments !== false,
 
-      // SMTP options
-      smtpTimeout: options.smtpTimeout || 5000,
+      // SMTP connection options
+      // Increase timeout slightly to handle slow servers when SMTP IS enabled
+      smtpTimeout: options.smtpTimeout || 8000,
       smtpFromDomain: options.smtpFromDomain || "validator.example.com",
       smtpPort: options.smtpPort || 25,
       smtpSecure: options.smtpSecure || false,
@@ -204,17 +210,15 @@ class EmailValidator {
       // Step 2: Typo detection and correction (only for known domain typos)
       if (this.options.checkTypos) {
         result.checks_performed.push("typos");
-        const [localPart, domain] = email.split("@");
-
+        // Use already-parsed localPart and domain from above
         // Check only our known domain corrections mapping
         if (
           domain &&
           this.typoCorrector.domainCorrections[domain.toLowerCase()]
         ) {
           result.typo_detected = true;
-          result.suggestion = `${localPart}@${
-            this.typoCorrector.domainCorrections[domain.toLowerCase()]
-          }`;
+          result.suggestion = `${localPart}@${this.typoCorrector.domainCorrections[domain.toLowerCase()]
+            }`;
         }
       }
 
@@ -456,17 +460,29 @@ class EmailValidator {
       return new Promise((resolve) => {
         const socket = new net.Socket();
         let step = 0;
-        let responses = [];
+        let buffer = ""; // Buffer for multi-line SMTP responses
+        let resolved = false;
 
         const cleanup = () => {
           socket.destroy();
         };
 
+        const safeResolve = (result) => {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeout);
+            cleanup();
+            resolve(result);
+          }
+        };
+
         const timeout = setTimeout(() => {
-          cleanup();
-          resolve({
-            deliverable: false,
-            reason: "SMTP connection timeout",
+          // Resolve as null (uncertain) rather than false — port 25 is blocked
+          // on most residential/cloud networks, so a timeout does NOT mean the
+          // mailbox is undeliverable; it just means we couldn't verify it.
+          safeResolve({
+            deliverable: null,
+            reason: "SMTP connection timeout (port 25 may be blocked)",
             serverBanner,
             serverResponse,
             tlsSupported,
@@ -479,90 +495,125 @@ class EmailValidator {
         });
 
         socket.on("data", (data) => {
-          const response = data.toString().trim();
-          responses.push(response);
+          // Buffer data to handle multi-line SMTP responses sent across
+          // multiple TCP packets (e.g. "250-mail.google.com\r\n250 OK")
+          buffer += data.toString();
 
-          // Capture server banner on first response
-          if (step === 0 && response.startsWith("220")) {
-            serverBanner = response;
-            // Check for TLS support in banner
-            tlsSupported =
-              response.toLowerCase().includes("tls") ||
-              response.toLowerCase().includes("starttls");
-          }
+          // Process complete lines from the buffer
+          const lines = buffer.split("\r\n");
+          // Keep the last (possibly incomplete) line in the buffer
+          buffer = lines.pop();
 
-          if (step === 0 && response.startsWith("220")) {
-            // Received greeting, send HELO
-            socket.write(`HELO ${this.options.smtpFromDomain}\r\n`);
-            step = 1;
-          } else if (step === 1 && response.startsWith("250")) {
-            // HELO accepted, send MAIL FROM
-            socket.write(`MAIL FROM:<test@${this.options.smtpFromDomain}>\r\n`);
-            step = 2;
-          } else if (step === 2 && response.startsWith("250")) {
-            // MAIL FROM accepted, send RCPT TO
-            socket.write(`RCPT TO:<${email}>\r\n`);
-            step = 3;
-          } else if (step === 3) {
-            // Store server response
-            serverResponse = response;
+          for (const line of lines) {
+            if (!line) continue;
 
-            if (response.startsWith("250")) {
-              // Test for catch-all by sending a RCPT TO to a random address
-              const randomEmail = `nonexistent-${Date.now()}@${domain}`;
-              socket.write(`RCPT TO:<${randomEmail}>\r\n`);
-              step = 4;
-            } else if (response.startsWith("550")) {
-              // Check RCPT TO response
-              clearTimeout(timeout);
-              cleanup();
-              resolve({
-                deliverable: false,
-                reason: "Email address rejected by server",
-                serverBanner,
-                serverResponse,
-                tlsSupported,
-                isCatchAll,
-              });
-            } else {
-              // Check RCPT TO response
-              clearTimeout(timeout);
-              cleanup();
-              resolve({
+            // Skip continuation lines of multi-line responses (e.g. "250-PIPELINING")
+            // Only act on the FINAL line of a multi-line response (no hyphen after code)
+            const isContinuation = /^\d{3}-/.test(line);
+            if (isContinuation) {
+              // Check for STARTTLS in EHLO continuation lines
+              if (line.toUpperCase().includes("STARTTLS")) {
+                tlsSupported = true;
+              }
+              continue;
+            }
+
+            const response = line.trim();
+
+            if (step === 0 && response.startsWith("220")) {
+              serverBanner = response;
+              tlsSupported =
+                response.toLowerCase().includes("tls") ||
+                response.toLowerCase().includes("starttls");
+              // Use EHLO (modern) instead of HELO for better compatibility
+              socket.write(`EHLO ${this.options.smtpFromDomain}\r\n`);
+              step = 1;
+            } else if (step === 1 && response.startsWith("250")) {
+              // EHLO accepted, send MAIL FROM
+              socket.write(
+                `MAIL FROM:<validator@${this.options.smtpFromDomain}>\r\n`
+              );
+              step = 2;
+            } else if (step === 1 && response.startsWith("500")) {
+              // Server doesn't support EHLO, fall back to HELO
+              socket.write(`HELO ${this.options.smtpFromDomain}\r\n`);
+              // Reuse step 1; next 250 will trigger MAIL FROM
+            } else if (step === 2 && response.startsWith("250")) {
+              // MAIL FROM accepted, send RCPT TO
+              socket.write(`RCPT TO:<${email}>\r\n`);
+              step = 3;
+            } else if (step === 2 && !response.startsWith("250")) {
+              // MAIL FROM rejected (e.g. spam filter) — uncertain
+              safeResolve({
                 deliverable: null,
-                reason: "Uncertain - server response: " + response,
+                reason: "SMTP MAIL FROM rejected: " + response,
+                serverBanner,
+                serverResponse,
+                tlsSupported,
+                isCatchAll,
+              });
+            } else if (step === 3) {
+              serverResponse = response;
+
+              if (response.startsWith("250") || response.startsWith("251")) {
+                // RCPT TO accepted — test catch-all with random address
+                const randomEmail = `nxuser-${Date.now()}@${domain}`;
+                socket.write(`RCPT TO:<${randomEmail}>\r\n`);
+                step = 4;
+              } else if (
+                response.startsWith("550") ||
+                response.startsWith("551") ||
+                response.startsWith("553") ||
+                response.startsWith("554")
+              ) {
+                // Definitive rejection — mailbox does not exist
+                safeResolve({
+                  deliverable: false,
+                  reason: "Email address rejected by server (" + response.substring(0, 3) + ")",
+                  serverBanner,
+                  serverResponse,
+                  tlsSupported,
+                  isCatchAll,
+                });
+              } else {
+                // Greylisting / temp failure / other — uncertain
+                safeResolve({
+                  deliverable: null,
+                  reason: "Uncertain - server response: " + response,
+                  serverBanner,
+                  serverResponse,
+                  tlsSupported,
+                  isCatchAll,
+                });
+              }
+            } else if (step === 4) {
+              // Check catch-all: if random address also accepted, it's a catch-all
+              if (response.startsWith("250") || response.startsWith("251")) {
+                isCatchAll = true;
+              }
+              safeResolve({
+                deliverable: true,
+                reason: isCatchAll
+                  ? "SMTP server accepts email (catch-all domain)"
+                  : "SMTP server confirmed mailbox exists",
                 serverBanner,
                 serverResponse,
                 tlsSupported,
                 isCatchAll,
               });
             }
-          } else if (step === 4) {
-            // Check catch-all response
-            clearTimeout(timeout);
-            cleanup();
-
-            if (response.startsWith("250")) {
-              isCatchAll = true;
-            }
-
-            resolve({
-              deliverable: true,
-              reason: "SMTP server accepts email",
-              serverBanner,
-              serverResponse,
-              tlsSupported,
-              isCatchAll,
-            });
           }
         });
 
         socket.on("error", (error) => {
-          clearTimeout(timeout);
-          cleanup();
-          resolve({
-            deliverable: false,
-            reason: "SMTP connection error: " + error.message,
+          // Distinguish port-blocked errors (uncertain) from other errors
+          const blockedCodes = ["ECONNREFUSED", "ETIMEDOUT", "ENETUNREACH", "EHOSTUNREACH", "ECONNRESET"];
+          const isBlocked = blockedCodes.includes(error.code);
+          safeResolve({
+            deliverable: isBlocked ? null : false,
+            reason: isBlocked
+              ? "SMTP port blocked/unreachable (cannot verify): " + error.message
+              : "SMTP connection error: " + error.message,
             serverBanner,
             serverResponse,
             tlsSupported,
@@ -603,6 +654,55 @@ class EmailValidator {
         );
       } catch (e) {
         // SPF record not found
+      }
+
+      // Check DKIM record
+      // DKIM is published at <selector>._domainkey.<domain>.
+      // Since we don't know the selector, we probe common ones.
+      // The mere existence of ANY dkim selector record proves DKIM is set up.
+      const dkimSelectors = [
+        "default",
+        "google",
+        "mail",
+        "dkim",
+        "k1",
+        "key1",
+        "s1",
+        "s2",
+        "selector1",
+        "selector2",
+        "smtp",
+        "email",
+        "mx",
+        "dkimkey",
+        "sig1",
+        "main",
+        "m1",
+        "zoho",
+        "mimecast",
+        "protonmail",
+        "mandrill",
+        "mg",
+      ];
+
+      for (const selector of dkimSelectors) {
+        try {
+          const dkimRecords = await dns.resolveTxt(
+            `${selector}._domainkey.${asciiDomain}`
+          );
+          if (
+            dkimRecords.some((record) =>
+              record.some(
+                (txt) => txt.includes("v=DKIM1") || txt.includes("p=")
+              )
+            )
+          ) {
+            health.dkim = true;
+            break; // Found one, no need to check more selectors
+          }
+        } catch (e) {
+          // This selector doesn't exist, try next
+        }
       }
 
       // Check DMARC record
@@ -719,39 +819,45 @@ class EmailValidator {
   calculateScore(result) {
     let score = 0;
 
-    // Syntax (25 points) - Increased weight
-    if (result.syntax_valid) score += 25;
+    // === Core checks (100 points total, SMTP-independent) ===
 
-    // Domain (20 points)
+    // Syntax (30 points)
+    if (result.syntax_valid) score += 30;
+
+    // Domain resolves (20 points)
     if (result.domain_valid) score += 20;
 
-    // MX Records (25 points)
-    if (result.mx_found) score += 25;
+    // MX Records — can receive email (30 points)
+    if (result.mx_found) score += 30;
 
-    // SMTP (20 points) - Increased weight
-    if (result.smtp_deliverable === true) score += 20;
-    else if (result.smtp_deliverable === null) score += 5; // Reduced for uncertainty
-
-    // Domain health (15 points) - Increased weight
+    // Domain health (20 points)
     const healthScore =
-      (result.domainHealth.spf ? 5 : 0) + // Increased from 3
-      (result.domainHealth.dmarc ? 7 : 0) + // Increased from 4
-      (result.domainHealth.dkim ? 3 : 0);
+      (result.domainHealth.spf ? 7 : 0) +
+      (result.domainHealth.dmarc ? 8 : 0) +
+      (result.domainHealth.dkim ? 5 : 0);
     score += healthScore;
 
-    // Advanced heuristics bonus (if enabled)
+    // === SMTP (bonus only — SMTP is disabled by default) ===
+    // Port 25 is blocked on most networks, so null = not run = neutral (0).
+    // confirmed deliverable = +15 bonus
+    // definitive rejection   = -10 penalty
+    if (result.smtp_deliverable === true) score += 15;
+    else if (result.smtp_deliverable === false) score -= 10;
+    // null = uncertain/not run = 0 (no change)
+
+    // === Advanced heuristics bonus ===
     if (result.advanced_heuristics_score > 70) {
-      score += 10;
+      score += 8;
     } else if (result.advanced_heuristics_score > 50) {
-      score += 5;
+      score += 4;
     }
 
-    // Penalties (stricter)
+    // === Penalties ===
     const disposablePenalty = this.options.strictScoring ? 50 : 40;
     const blacklistedPenalty = this.options.strictScoring ? 60 : 50;
-    const roleBasedPenalty = this.options.strictScoring ? 25 : 15;
-    const freeProviderPenalty = this.options.strictScoring ? 10 : 5;
-    const typoPenalty = this.options.strictScoring ? 25 : 15;
+    const roleBasedPenalty = this.options.strictScoring ? 20 : 10;
+    const freeProviderPenalty = this.options.strictScoring ? 8 : 3;
+    const typoPenalty = this.options.strictScoring ? 20 : 12;
 
     if (result.disposable) score -= disposablePenalty;
     if (result.domainHealth.blacklisted) score -= blacklistedPenalty;
@@ -766,14 +872,14 @@ class EmailValidator {
     )
       score -= typoPenalty;
 
-    // TLS support bonus
-    if (result.tls_supported) score += 5;
+    // TLS support bonus (only meaningful when SMTP ran)
+    if (result.tls_supported) score += 3;
 
-    // Domain reputation bonus/penalty (10 points)
+    // Domain reputation bonus/penalty
     score += (result.domainHealth.reputation - 50) / 5;
 
     // Business email bonus
-    if (result.is_business_email) score += 10;
+    if (result.is_business_email) score += 8;
 
     return Math.max(0, Math.min(100, Math.round(score)));
   }
@@ -823,12 +929,14 @@ class EmailValidator {
   }
 
   // Enhanced role-based detection
+  // NOTE: roleBasedPatterns match against the FULL email (e.g. /^abuse@/i)
+  // so we must receive and test the full email string, not just localPart.
   isRoleBased(localPart) {
     if (!this.options.enableRoleBasedDetection) return false;
 
-    return this.roleBasedPatterns.some((pattern) =>
-      pattern.test(localPart.toLowerCase())
-    );
+    // Reconstruct a testable string: patterns use ^<word>@ anchors
+    const testStr = localPart.toLowerCase() + "@placeholder";
+    return this.roleBasedPatterns.some((pattern) => pattern.test(testStr));
   }
 
   // Check if domain is a free email provider

@@ -239,73 +239,43 @@ class DisposableDetector {
 
   checkAdvancedHeuristics(domain) {
     // Check for common disposable email naming patterns
+    // IMPORTANT: patterns must be specific to avoid false positives on
+    // legitimate providers like fastmail.com, protonmail.com, mail.com, etc.
     const suspiciousPatterns = [
-      // Time-based patterns
-      /\d+min/i,
-      /\d+hour/i,
-      /\d+sec/i,
-      /instant/i,
-      /quick/i,
-      /fast/i,
-
-      // Action-based patterns
-      /throw/i,
-      /drop/i,
-      /trash/i,
-      /delete/i,
-      /destroy/i,
-      /burn/i,
-      /expire/i,
-      /vanish/i,
-
-      // Purpose-based patterns
-      /test/i,
-      /demo/i,
-      /sample/i,
-      /fake/i,
-      /dummy/i,
-      /mock/i,
-
-      // Privacy-based patterns
-      /anon/i,
-      /private/i,
-      /secret/i,
-      /hidden/i,
-      /incognito/i,
-
+      // Time-based patterns (specific to disposable services)
+      /^\d+min(ute)?mail/i,
+      /^\d+hour(s)?mail/i,
+      /^instant.*temp/i,
+      // Action-based patterns combined with disposable indicators
+      /^throw.*away/i,
+      /^trash.*mail/i,
+      /^burn.*mail/i,
+      // Purpose-based patterns (specific enough to be safe)
+      /^fake.*mail/i,
+      /^dummy.*mail/i,
+      // Privacy-based patterns (specific to disposable services)
+      /^anon(ym)?(ous)?mail/i,
+      /^incognito.*mail/i,
       // Spam-related patterns
-      /nospam/i,
-      /antispam/i,
-      /spamfree/i,
-      /noads/i,
-
-      // Generic patterns
-      /mailbox/i,
-      /inbox/i,
-      /email/i,
-      /mail/i,
+      /^nospam\./i,
+      /^antispam\./i,
+      /^spamfree\./i,
     ];
 
-    // Count how many patterns match
+    // If any specific disposable pattern matches, it's likely disposable
     const matches = suspiciousPatterns.filter((pattern) =>
       pattern.test(domain)
     ).length;
 
-    // If multiple patterns match, it's likely disposable
-    if (matches >= 2) {
+    if (matches >= 1) {
       return true;
     }
 
-    // Check for very short domains with mail-related terms
-    if (domain.length <= 8 && /mail/i.test(domain)) {
-      return true;
-    }
-
-    // Check for domains with excessive hyphens or numbers
+    // Check for domains with excessive hyphens AND numbers combined with mail keyword
     const hyphenCount = (domain.match(/-/g) || []).length;
     const numberCount = (domain.match(/\d/g) || []).length;
 
-    if (hyphenCount > 2 || (numberCount > 3 && domain.includes("mail"))) {
+    if (hyphenCount > 3 || (numberCount > 4 && /tempmail|trashmail/i.test(domain))) {
       return true;
     }
 

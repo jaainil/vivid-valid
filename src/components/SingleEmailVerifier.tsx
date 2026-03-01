@@ -123,10 +123,13 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
       console.log("Backend analysis result:", analysis);
 
       // Show progress through validation steps
-      const validationSteps = analysis.checks_performed || steps;
+      const validationSteps = analysis.checks_performed?.length
+        ? analysis.checks_performed
+        : steps;
       for (let i = 0; i < validationSteps.length; i++) {
         setCurrentStep(i);
-        setProgress((i / (validationSteps.length - 1)) * 100);
+        const total = validationSteps.length;
+        setProgress(total > 1 ? (i / (total - 1)) * 100 : 100);
 
         // Small delay to show progress
         await new Promise((resolve) => setTimeout(resolve, 300));
@@ -161,9 +164,8 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
       const errorResult: EmailResult = {
         ...result,
         status: "invalid",
-        reason: `Validation failed: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
+        reason: `Validation failed: ${error instanceof Error ? error.message : "Unknown error"
+          }`,
         score: 0,
         timestamp: Date.now(),
       };
@@ -193,9 +195,8 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
         <div className="mt-4 flex items-center justify-center">
           <div className="flex items-center space-x-2">
             <span
-              className={`text-sm font-medium ${
-                !useStrictMode ? "text-primary" : "text-muted-foreground"
-              }`}
+              className={`text-sm font-medium ${!useStrictMode ? "text-primary" : "text-muted-foreground"
+                }`}
             >
               Standard Mode
             </span>
@@ -206,15 +207,13 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
             >
               <span className="sr-only">Toggle strict mode</span>
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  useStrictMode ? "translate-x-6" : "translate-x-1"
-                }`}
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${useStrictMode ? "translate-x-6" : "translate-x-1"
+                  }`}
               />
             </button>
             <span
-              className={`text-sm font-medium ${
-                useStrictMode ? "text-primary" : "text-muted-foreground"
-              }`}
+              className={`text-sm font-medium ${useStrictMode ? "text-primary" : "text-muted-foreground"
+                }`}
             >
               Strict Mode
             </span>
@@ -239,23 +238,22 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
           <div className="text-sm">
             Backend Status:{" "}
             <span
-              className={`font-medium ${
-                backendStatus === "connected"
+              className={`font-medium ${backendStatus === "connected"
                   ? "text-green-600"
                   : backendStatus === "failed"
-                  ? "text-red-600"
-                  : backendStatus === "testing"
-                  ? "text-yellow-600"
-                  : "text-gray-600"
-              }`}
+                    ? "text-red-600"
+                    : backendStatus === "testing"
+                      ? "text-yellow-600"
+                      : "text-gray-600"
+                }`}
             >
               {backendStatus === "connected"
                 ? "✅ Connected"
                 : backendStatus === "failed"
-                ? "❌ Failed"
-                : backendStatus === "testing"
-                ? "🔄 Testing..."
-                : "❓ Unknown"}
+                  ? "❌ Failed"
+                  : backendStatus === "testing"
+                    ? "🔄 Testing..."
+                    : "❓ Unknown"}
             </span>
           </div>
         </div>
@@ -339,44 +337,40 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
 
             <div className="grid grid-cols-4 gap-3 text-center">
               <div
-                className={`p-3 rounded-lg transition-all duration-500 ${
-                  currentStep >= 0
+                className={`p-3 rounded-lg transition-all duration-500 ${currentStep >= 0
                     ? "bg-success/20 text-success"
                     : "bg-muted/20"
-                }`}
+                  }`}
               >
                 <CheckCircle className="h-4 w-4 mx-auto mb-1" />
                 <div className="text-xs">Format</div>
               </div>
 
               <div
-                className={`p-3 rounded-lg transition-all duration-500 ${
-                  currentStep >= 2
+                className={`p-3 rounded-lg transition-all duration-500 ${currentStep >= 2
                     ? "bg-success/20 text-success"
                     : "bg-muted/20"
-                }`}
+                  }`}
               >
                 <Mail className="h-4 w-4 mx-auto mb-1" />
                 <div className="text-xs">Domain</div>
               </div>
 
               <div
-                className={`p-3 rounded-lg transition-all duration-500 ${
-                  currentStep >= 4
+                className={`p-3 rounded-lg transition-all duration-500 ${currentStep >= 4
                     ? "bg-warning/20 text-warning"
                     : "bg-muted/20"
-                }`}
+                  }`}
               >
                 <Activity className="h-4 w-4 mx-auto mb-1" />
                 <div className="text-xs">Reputation</div>
               </div>
 
               <div
-                className={`p-3 rounded-lg transition-all duration-500 ${
-                  currentStep >= 6
+                className={`p-3 rounded-lg transition-all duration-500 ${currentStep >= 6
                     ? "bg-primary/20 text-primary"
                     : "bg-muted/20"
-                }`}
+                  }`}
               >
                 <Shield className="h-4 w-4 mx-auto mb-1" />
                 <div className="text-xs">Score</div>

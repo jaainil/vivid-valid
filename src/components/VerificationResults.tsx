@@ -65,16 +65,11 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
       "Email,Status,Reason,Score,Format,Domain,MX,SMTP,Reputation,Deliverability,SPF,DKIM,DMARC,Blacklisted,Timestamp",
       ...dataToDownload.map(
         (result) =>
-          `${result.email},${result.status},${result.reason},${
-            result.score || 0
-          },${result.factors?.format || false},${
-            result.factors?.domain || false
-          },${result.factors?.mx || false},${result.factors?.smtp || false},${
-            result.factors?.reputation || 0
-          },${result.factors?.deliverability || 0},${
-            result.domainHealth?.spf || false
-          },${result.domainHealth?.dkim || false},${
-            result.domainHealth?.dmarc || false
+          `${result.email},${result.status},${result.reason},${result.score || 0
+          },${result.factors?.format || false},${result.factors?.domain || false
+          },${result.factors?.mx || false},${result.factors?.smtp || false},${result.factors?.reputation || 0
+          },${result.factors?.deliverability || 0},${result.domainHealth?.spf || false
+          },${result.domainHealth?.dkim || false},${result.domainHealth?.dmarc || false
           },${result.domainHealth?.blacklisted || false},${new Date(
             result.timestamp
           ).toISOString()}`
@@ -146,7 +141,7 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
 
           <div className="flex gap-2">
             <Button
-              variant={statusFilter === "all" ? "default" : "outline-solid"}
+              variant={statusFilter === "all" ? "default" : "outline"}
               onClick={() => setStatusFilter("all")}
               size="sm"
             >
@@ -155,7 +150,7 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
             </Button>
 
             <Button
-              variant={statusFilter === "valid" ? "default" : "outline-solid"}
+              variant={statusFilter === "valid" ? "default" : "outline"}
               onClick={() => setStatusFilter("valid")}
               size="sm"
               className={statusFilter === "valid" ? "btn-success" : ""}
@@ -164,7 +159,7 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
             </Button>
 
             <Button
-              variant={statusFilter === "risky" ? "default" : "outline-solid"}
+              variant={statusFilter === "risky" ? "default" : "outline"}
               onClick={() => setStatusFilter("risky")}
               size="sm"
             >
@@ -172,7 +167,7 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
             </Button>
 
             <Button
-              variant={statusFilter === "invalid" ? "default" : "outline-solid"}
+              variant={statusFilter === "invalid" ? "default" : "outline"}
               onClick={() => setStatusFilter("invalid")}
               size="sm"
             >
@@ -227,15 +222,14 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
                         )}
 
                         <Badge
-                          className={`border text-xs ${
-                            result.status === 'valid'
+                          className={`border text-xs ${result.status === 'valid'
                               ? 'bg-green-100 text-green-800 border-green-300'
                               : result.status === 'risky'
                                 ? 'bg-orange-100 text-orange-800 border-orange-300'
                                 : result.status === 'invalid'
                                   ? 'bg-red-100 text-red-800 border-red-300'
                                   : 'bg-gray-100 text-gray-800 border-gray-300'
-                          }`}
+                            }`}
                         >
                           {result.status.toUpperCase()}
                         </Badge>
@@ -252,41 +246,37 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
                         {/* Verification Factors */}
                         <div className="flex items-center gap-4 text-xs">
                           <div
-                            className={`flex items-center gap-1 ${
-                              result.factors.format
+                            className={`flex items-center gap-1 ${result.factors.format
                                 ? "text-success"
                                 : "text-destructive"
-                            }`}
+                              }`}
                           >
                             <CheckCircle className="h-3 w-3" />
                             Format
                           </div>
                           <div
-                            className={`flex items-center gap-1 ${
-                              result.factors.domain
+                            className={`flex items-center gap-1 ${result.factors.domain
                                 ? "text-success"
                                 : "text-destructive"
-                            }`}
+                              }`}
                           >
                             <CheckCircle className="h-3 w-3" />
                             Domain
                           </div>
                           <div
-                            className={`flex items-center gap-1 ${
-                              result.factors.mx
+                            className={`flex items-center gap-1 ${result.factors.mx
                                 ? "text-success"
                                 : "text-destructive"
-                            }`}
+                              }`}
                           >
                             <CheckCircle className="h-3 w-3" />
                             MX
                           </div>
                           <div
-                            className={`flex items-center gap-1 ${
-                              result.factors.smtp
+                            className={`flex items-center gap-1 ${result.factors.smtp
                                 ? "text-success"
                                 : "text-destructive"
-                            }`}
+                              }`}
                           >
                             <Zap className="h-3 w-3" />
                             SMTP
@@ -297,29 +287,26 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
                         {result.domainHealth && (
                           <div className="flex items-center gap-4 text-xs">
                             <div
-                              className={`flex items-center gap-1 ${
-                                result.domainHealth.spf
+                              className={`flex items-center gap-1 ${result.domainHealth.spf
                                   ? "text-success"
                                   : "text-muted-foreground"
-                              }`}
+                                }`}
                             >
                               SPF: {result.domainHealth.spf ? "✓" : "✗"}
                             </div>
                             <div
-                              className={`flex items-center gap-1 ${
-                                result.domainHealth.dkim
+                              className={`flex items-center gap-1 ${result.domainHealth.dkim
                                   ? "text-success"
                                   : "text-muted-foreground"
-                              }`}
+                                }`}
                             >
                               DKIM: {result.domainHealth.dkim ? "✓" : "✗"}
                             </div>
                             <div
-                              className={`flex items-center gap-1 ${
-                                result.domainHealth.dmarc
+                              className={`flex items-center gap-1 ${result.domainHealth.dmarc
                                   ? "text-success"
                                   : "text-muted-foreground"
-                              }`}
+                                }`}
                             >
                               DMARC: {result.domainHealth.dmarc ? "✓" : "✗"}
                             </div>

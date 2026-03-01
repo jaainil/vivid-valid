@@ -111,7 +111,9 @@ class BulkValidator {
       } else {
         // Return error result for failed validation
         const errorMessage =
-          result.reason || result.message || "Unknown validation error";
+          (result.reason instanceof Error
+            ? result.reason.message
+            : result.reason) || "Unknown validation error";
         return {
           input: emails[index],
           syntax_valid: false,

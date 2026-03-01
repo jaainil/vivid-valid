@@ -319,7 +319,7 @@ class RFCParser {
 
     // Check for valid TLD length
     const tld = domain.split(".").pop();
-    if (tld.length < 2 || tld.length > 6) {
+    if (tld.length < 2) {
       return { valid: false, reason: "Invalid top-level domain length" };
     }
 
