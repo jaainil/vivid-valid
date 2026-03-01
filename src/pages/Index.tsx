@@ -58,7 +58,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-card to-background">
+    <div className="min-h-screen bg-linear-to-br from-background via-card to-background">
       {/* Header with Theme Toggle */}
       <div className="container mx-auto px-4 pt-6">
         <div className="flex justify-end mb-6">
@@ -75,7 +75,7 @@ const Index = () => {
             </div>
           </div>
 
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-primary-glow to-success bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold mb-4 bg-linear-to-r from-primary via-primary-glow to-success bg-clip-text text-transparent">
             Email Verifier Pro
           </h1>
 

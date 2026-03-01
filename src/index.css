@@ -1,6 +1,184 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@plugin 'tailwindcss-animate';
+
+@custom-variant dark (&:is(.dark *));
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= 1400px) {
+    max-width: 1400px;
+  }
+}
+
+@theme {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-glow: hsl(var(--primary-glow));
+
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-success-glow: hsl(var(--success-glow));
+
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility btn-hero {
+  /* Hero Button Variants */
+  @apply bg-linear-to-r from-primary to-primary-glow text-primary-foreground shadow-(--shadow-glow) hover:shadow-(--shadow-success) transition-all duration-300 hover:scale-105;
+}
+
+@utility btn-success {
+  @apply bg-linear-to-r from-success to-success-glow text-success-foreground shadow-(--shadow-success);
+}
+
+@utility status-checking {
+  /* Status Indicators */
+  @apply bg-warning/20 text-warning border-warning/30;
+}
+
+@utility status-valid {
+  @apply bg-success/20 text-success border-success/30;
+}
+
+@utility status-invalid {
+  @apply bg-destructive/20 text-destructive border-destructive/30;
+}
+
+@utility status-risky {
+  @apply bg-orange-500/20 text-orange-400 border-orange-500/30;
+}
+
+@utility progress-glow {
+  /* Animated Progress Bar */
+  background: var(--gradient-primary);
+  box-shadow: var(--shadow-glow);
+  animation: pulse-glow 2s infinite;
+}
+
+@utility glass-card {
+  /* Glass Morphism Cards */
+  background: var(--gradient-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid hsl(var(--border));
+  box-shadow: var(--shadow-card);
+}
+
+@utility step-pulse {
+  /* Verification Step Animation */
+  animation: step-pulse 1.5s infinite;
+}
+
+@utility drop-zone-active {
+  /* File Drop Zone */
+  background: var(--gradient-primary);
+  border-color: hsl(var(--primary));
+  box-shadow: var(--shadow-glow);
+  transform: scale(1.02);
+}
+
+@utility animate-verification-spin {
+  /* Animation Keyframes */
+
+  /* Utility Classes */
+  animation: verification-spin 1s linear infinite;
+}
+
+@utility animate-bounce-in {
+  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@utility animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+@utility transition-smooth {
+  transition: var(--transition-smooth);
+}
+
+@utility transition-bounce {
+  transition: var(--transition-bounce);
+}
 
 /* Email Verifier Design System - Modern, Professional, Animated */
 
@@ -196,64 +374,7 @@
   }
 }
 
-@layer components {
-  /* Hero Button Variants */
-  .btn-hero {
-    @apply bg-gradient-to-r from-primary to-primary-glow text-primary-foreground shadow-[var(--shadow-glow)] hover:shadow-[var(--shadow-success)] transition-all duration-300 hover:scale-105;
-  }
-
-  .btn-success {
-    @apply bg-gradient-to-r from-success to-success-glow text-success-foreground shadow-[var(--shadow-success)];
-  }
-
-  /* Status Indicators */
-  .status-checking {
-    @apply bg-warning/20 text-warning border-warning/30;
-  }
-
-  .status-valid {
-    @apply bg-success/20 text-success border-success/30;
-  }
-
-  .status-invalid {
-    @apply bg-destructive/20 text-destructive border-destructive/30;
-  }
-
-  .status-risky {
-    @apply bg-orange-500/20 text-orange-400 border-orange-500/30;
-  }
-
-  /* Animated Progress Bar */
-  .progress-glow {
-    background: var(--gradient-primary);
-    box-shadow: var(--shadow-glow);
-    animation: pulse-glow 2s infinite;
-  }
-
-  /* Glass Morphism Cards */
-  .glass-card {
-    background: var(--gradient-card);
-    backdrop-filter: blur(20px);
-    border: 1px solid hsl(var(--border));
-    box-shadow: var(--shadow-card);
-  }
-
-  /* Verification Step Animation */
-  .step-pulse {
-    animation: step-pulse 1.5s infinite;
-  }
-
-  /* File Drop Zone */
-  .drop-zone-active {
-    background: var(--gradient-primary);
-    border-color: hsl(var(--primary));
-    box-shadow: var(--shadow-glow);
-    transform: scale(1.02);
-  }
-}
-
 @layer utilities {
-  /* Animation Keyframes */
   @keyframes pulse-glow {
     0%,
     100% {
@@ -314,26 +435,5 @@
       opacity: 1;
       transform: translateY(0);
     }
-  }
-
-  /* Utility Classes */
-  .animate-verification-spin {
-    animation: verification-spin 1s linear infinite;
-  }
-
-  .animate-bounce-in {
-    animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  .animate-slide-up {
-    animation: slide-up 0.4s ease-out;
-  }
-
-  .transition-smooth {
-    transition: var(--transition-smooth);
-  }
-
-  .transition-bounce {
-    transition: var(--transition-bounce);
   }
 }

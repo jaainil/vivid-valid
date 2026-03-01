@@ -146,7 +146,7 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
 
           <div className="flex gap-2">
             <Button
-              variant={statusFilter === "all" ? "default" : "outline"}
+              variant={statusFilter === "all" ? "default" : "outline-solid"}
               onClick={() => setStatusFilter("all")}
               size="sm"
             >
@@ -155,7 +155,7 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
             </Button>
 
             <Button
-              variant={statusFilter === "valid" ? "default" : "outline"}
+              variant={statusFilter === "valid" ? "default" : "outline-solid"}
               onClick={() => setStatusFilter("valid")}
               size="sm"
               className={statusFilter === "valid" ? "btn-success" : ""}
@@ -164,7 +164,7 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
             </Button>
 
             <Button
-              variant={statusFilter === "risky" ? "default" : "outline"}
+              variant={statusFilter === "risky" ? "default" : "outline-solid"}
               onClick={() => setStatusFilter("risky")}
               size="sm"
             >
@@ -172,7 +172,7 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
             </Button>
 
             <Button
-              variant={statusFilter === "invalid" ? "default" : "outline"}
+              variant={statusFilter === "invalid" ? "default" : "outline-solid"}
               onClick={() => setStatusFilter("invalid")}
               size="sm"
             >

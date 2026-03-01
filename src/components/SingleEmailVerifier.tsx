@@ -201,7 +201,7 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
             </span>
             <button
               onClick={() => setUseStrictMode(!useStrictMode)}
-              className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isVerifying}
             >
               <span className="sr-only">Toggle strict mode</span>
