@@ -1,10 +1,18 @@
-FROM node:20-alpine AS backend
+FROM node:20-alpine AS frontend
 
 WORKDIR /app
 
-COPY backend/package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+COPY package.json ./
+RUN npm install
 
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine AS backend
+
+WORKDIR /app
+COPY backend/package.json backend/package-lock.json* ./
+RUN npm ci --only=production && npm cache clean --force
 COPY backend/ ./
 
 FROM node:20-alpine
@@ -13,8 +21,8 @@ RUN apk add --no-cache nginx && \
     rm -rf /var/cache/apk/* && \
     mkdir -p /var/cache/nginx /var/log/nginx /run/nginx /var/lib/nginx/tmp /var/lib/nginx/proxy
 
+COPY --from=frontend /app/dist /var/www/html
 COPY --from=backend /app /var/www/backend
-COPY dist/ /var/www/html
 COPY nginx.conf /etc/nginx/nginx.conf
 
 RUN rm -rf /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp /var/cache/nginx/fastcgi_temp /var/cache/nginx/uwsgi_temp /var/cache/nginx/scgi_temp
