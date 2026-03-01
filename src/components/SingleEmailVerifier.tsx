@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { EmailResult } from "@/pages/Index";
 import {
   validateEmailReal,
   suggestEmailCorrections,
-  commonTypos,
   testBackendConnection,
 } from "@/lib/emailValidation";
 import {
@@ -21,13 +21,25 @@ import {
   Shield,
   Activity,
   Wand2,
-  ToggleLeft,
-  ToggleRight,
+  Server,
+  Globe,
+  AtSign,
+  ArrowRight,
 } from "lucide-react";
 
 interface SingleEmailVerifierProps {
   onResult: (result: EmailResult) => void;
 }
+
+const steps = [
+  { label: "Format check", icon: AtSign },
+  { label: "Domain lookup", icon: Globe },
+  { label: "MX records", icon: Server },
+  { label: "SMTP test", icon: Zap },
+  { label: "Reputation", icon: Activity },
+  { label: "Domain health", icon: Shield },
+  { label: "Trust score", icon: CheckCircle },
+];
 
 const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
   const [email, setEmail] = useState("");
@@ -38,23 +50,10 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
   const [backendStatus, setBackendStatus] = useState<string>("unknown");
   const [useStrictMode, setUseStrictMode] = useState<boolean>(false);
 
-  const steps = [
-    "Checking email format...",
-    "Validating domain...",
-    "Looking up MX records...",
-    "Testing SMTP connection...",
-    "Analyzing reputation...",
-    "Checking domain health...",
-    "Calculating trust score...",
-  ];
-
   const handleEmailChange = (value: string) => {
     setEmail(value);
-
-    // Real-time suggestion checking
     if (value.includes("@")) {
-      const newSuggestions = suggestEmailCorrections(value);
-      setSuggestions(newSuggestions);
+      setSuggestions(suggestEmailCorrections(value));
     } else {
       setSuggestions([]);
     }
@@ -73,9 +72,8 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
     try {
       const isConnected = await testBackendConnection();
       setBackendStatus(isConnected ? "connected" : "failed");
-    } catch (error) {
+    } catch {
       setBackendStatus("failed");
-      console.error("Connection test failed:", error);
     }
   };
 
@@ -87,7 +85,6 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
     setProgress(0);
     setSuggestions([]);
 
-    // Create initial result
     const result: EmailResult = {
       id: Date.now().toString(),
       email,
@@ -95,59 +92,36 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
       reason: "Verification in progress...",
       timestamp: Date.now(),
       score: 0,
-      factors: {
-        format: false,
-        domain: false,
-        mx: false,
-        smtp: false,
-        reputation: 0,
-        deliverability: 0,
-      },
-      domainHealth: {
-        spf: false,
-        dkim: false,
-        dmarc: false,
-        blacklisted: false,
-        reputation: 0,
-      },
+      factors: { format: false, domain: false, mx: false, smtp: false, reputation: 0, deliverability: 0 },
+      domainHealth: { spf: false, dkim: false, dmarc: false, blacklisted: false, reputation: 0 },
     };
 
     onResult(result);
 
     try {
-      console.log("Starting validation for email:", email);
-
-      // Get actual analysis from backend
       const analysis = await validateEmailReal(email, { useStrictMode });
 
-      console.log("Backend analysis result:", analysis);
-
-      // Show progress through validation steps
       const validationSteps = analysis.checks_performed?.length
         ? analysis.checks_performed
-        : steps;
+        : steps.map((s) => s.label);
+
       for (let i = 0; i < validationSteps.length; i++) {
         setCurrentStep(i);
         const total = validationSteps.length;
         setProgress(total > 1 ? (i / (total - 1)) * 100 : 100);
-
-        // Small delay to show progress
         await new Promise((resolve) => setTimeout(resolve, 300));
       }
 
       const finalResult: EmailResult = {
         ...result,
-        email: analysis.input, // Map backend 'input' to frontend 'email'
+        email: analysis.input,
         status: analysis.status === "error" ? "invalid" : analysis.status,
         reason: analysis.reason,
         score: analysis.score,
         factors: analysis.factors,
-        suggestions: analysis.suggestion
-          ? [analysis.suggestion]
-          : analysis.suggestions || [],
+        suggestions: analysis.suggestion ? [analysis.suggestion] : analysis.suggestions || [],
         domainHealth: analysis.domainHealth,
         timestamp: Date.now(),
-        // Map strict mode properties
         normalized_email: analysis.normalized_email,
         is_role_based: analysis.is_role_based,
         is_catch_all: analysis.is_catch_all,
@@ -156,22 +130,15 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
         checks_performed: analysis.checks_performed,
       };
 
-      console.log("Final result to display:", finalResult);
       onResult({ ...finalResult, strictMode: useStrictMode });
     } catch (error) {
-      console.error("Validation failed:", error);
-
-      const errorResult: EmailResult = {
+      onResult({
         ...result,
         status: "invalid",
-        reason: `Validation failed: ${error instanceof Error ? error.message : "Unknown error"
-          }`,
+        reason: `Validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         score: 0,
         timestamp: Date.now(),
-      };
-
-      console.log("Error result:", errorResult);
-      onResult(errorResult);
+      });
     }
 
     setIsVerifying(false);
@@ -180,204 +147,250 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
     setCurrentStep(0);
   };
 
+  const backendStatusConfig = {
+    connected: { color: "hsl(152 72% 45%)", dot: "bg-success", label: "Connected" },
+    failed: { color: "hsl(355 85% 58%)", dot: "bg-destructive", label: "Failed" },
+    testing: { color: "hsl(38 98% 58%)", dot: "bg-warning animate-pulse", label: "Testing..." },
+    unknown: { color: "hsl(215 12% 52%)", dot: "bg-muted-foreground", label: "Unknown" },
+  };
+
+  const sc = backendStatusConfig[backendStatus as keyof typeof backendStatusConfig];
+
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-semibold mb-2">
+    <div className="space-y-7">
+      {/* Header */}
+      <div>
+        <h2
+          className="text-2xl font-bold text-foreground mb-1"
+          style={{ fontFamily: "'Syne', sans-serif" }}
+        >
           Single Email Verification
         </h2>
-        <p className="text-muted-foreground">
-          Advanced email verification with reputation scoring and domain health
-          analysis
+        <p className="text-sm text-muted-foreground">
+          Deep-scan any email address with 7 validation layers and domain health analysis.
         </p>
+      </div>
 
-        {/* Strict Mode Toggle */}
-        <div className="mt-4 flex items-center justify-center">
-          <div className="flex items-center space-x-2">
-            <span
-              className={`text-sm font-medium ${!useStrictMode ? "text-primary" : "text-muted-foreground"
-                }`}
-            >
-              Standard Mode
-            </span>
-            <button
-              onClick={() => setUseStrictMode(!useStrictMode)}
-              className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isVerifying}
-            >
-              <span className="sr-only">Toggle strict mode</span>
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${useStrictMode ? "translate-x-6" : "translate-x-1"
-                  }`}
-              />
-            </button>
-            <span
-              className={`text-sm font-medium ${useStrictMode ? "text-primary" : "text-muted-foreground"
-                }`}
-            >
-              Strict Mode
-            </span>
-            {useStrictMode && (
-              <Badge variant="destructive" className="ml-2">
-                MAX SECURITY
-              </Badge>
-            )}
-          </div>
+      {/* Controls row */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-muted/20 border border-border/50">
+        {/* Strict mode */}
+        <div className="flex items-center gap-3">
+          <Switch
+            id="strict-mode"
+            checked={useStrictMode}
+            onCheckedChange={setUseStrictMode}
+            disabled={isVerifying}
+            className="data-[state=checked]:bg-primary"
+          />
+          <Label htmlFor="strict-mode" className="text-sm cursor-pointer select-none">
+            <span className="text-foreground font-medium">Strict Mode</span>
+            <span className="ml-2 text-muted-foreground text-xs">Role-based &amp; catch-all detection</span>
+          </Label>
+          {useStrictMode && (
+            <Badge className="bg-destructive/20 text-destructive border-destructive/30 border text-xs font-mono">
+              MAX SEC
+            </Badge>
+          )}
         </div>
 
-        {/* Backend Connection Status */}
-        <div className="mt-4">
-          <Button
+        {/* Backend status */}
+        <div className="flex items-center gap-3">
+          <button
             onClick={testConnection}
-            variant="outline"
-            size="sm"
-            className="mb-2"
+            disabled={backendStatus === "testing"}
+            className="text-xs font-mono text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors disabled:opacity-50"
           >
-            Test Backend Connection
-          </Button>
-          <div className="text-sm">
-            Backend Status:{" "}
-            <span
-              className={`font-medium ${backendStatus === "connected"
-                  ? "text-green-600"
-                  : backendStatus === "failed"
-                    ? "text-red-600"
-                    : backendStatus === "testing"
-                      ? "text-yellow-600"
-                      : "text-gray-600"
-                }`}
-            >
-              {backendStatus === "connected"
-                ? "✅ Connected"
-                : backendStatus === "failed"
-                  ? "❌ Failed"
-                  : backendStatus === "testing"
-                    ? "🔄 Testing..."
-                    : "❓ Unknown"}
+            Test Connection
+          </button>
+          <div className="flex items-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+            <span className="text-xs font-mono" style={{ color: sc.color }}>
+              {sc.label}
             </span>
           </div>
         </div>
       </div>
 
+      {/* Email input */}
       <div className="space-y-3">
         <div className="flex gap-3">
-          <Input
-            type="email"
-            placeholder="Enter email address..."
-            value={email}
-            onChange={(e) => handleEmailChange(e.target.value)}
-            onKeyPress={(e) =>
-              e.key === "Enter" && !isVerifying && verifyEmail()
-            }
-            disabled={isVerifying}
-            className="text-lg p-6"
-          />
+          <div className="relative flex-1">
+            <Mail
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+            />
+            <Input
+              id="email-input"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => handleEmailChange(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" && !isVerifying && verifyEmail()
+              }
+              disabled={isVerifying}
+              className="pl-11 h-14 text-base font-mono bg-input/50 border-border/60 focus:border-primary/60 rounded-xl transition-all placeholder:text-muted-foreground/40"
+            />
+          </div>
 
           <Button
+            id="verify-btn"
             onClick={verifyEmail}
             disabled={!email.trim() || isVerifying}
-            className="btn-hero px-8 py-6 text-lg"
+            className="btn-hero h-14 px-8 rounded-xl text-sm font-bold tracking-wide disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ fontFamily: "'Syne', sans-serif" }}
           >
             {isVerifying ? (
               <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Verifying...
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Scanning...
               </>
             ) : (
               <>
-                <Shield className="mr-2 h-5 w-5" />
                 Verify
+                <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
           </Button>
         </div>
 
-        {/* Syntax Suggestions */}
+        {/* Suggestions */}
         {suggestions.length > 0 && (
-          <Card className="glass-card p-4 border-warning/20">
+          <div className="p-4 rounded-xl border border-warning/25 bg-warning/8 animate-fade-in">
             <div className="flex items-start gap-3">
-              <Wand2 className="h-5 w-5 text-warning mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-medium text-warning mb-2">Suggestions</h4>
-                <div className="space-y-2">
-                  {suggestions.map((suggestion, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-sm">{suggestion}</span>
-                      {suggestion.includes("Did you mean:") && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => applySuggestion(suggestion)}
-                          className="ml-2"
-                        >
-                          Fix
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Card>
-        )}
-      </div>
-
-      {isVerifying && (
-        <Card className="glass-card p-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <span className="font-medium">{steps[currentStep]}</span>
-            </div>
-
-            <Progress value={progress} className="h-3" />
-
-            <div className="grid grid-cols-4 gap-3 text-center">
-              <div
-                className={`p-3 rounded-lg transition-all duration-500 ${currentStep >= 0
-                    ? "bg-success/20 text-success"
-                    : "bg-muted/20"
-                  }`}
-              >
-                <CheckCircle className="h-4 w-4 mx-auto mb-1" />
-                <div className="text-xs">Format</div>
-              </div>
-
-              <div
-                className={`p-3 rounded-lg transition-all duration-500 ${currentStep >= 2
-                    ? "bg-success/20 text-success"
-                    : "bg-muted/20"
-                  }`}
-              >
-                <Mail className="h-4 w-4 mx-auto mb-1" />
-                <div className="text-xs">Domain</div>
-              </div>
-
-              <div
-                className={`p-3 rounded-lg transition-all duration-500 ${currentStep >= 4
-                    ? "bg-warning/20 text-warning"
-                    : "bg-muted/20"
-                  }`}
-              >
-                <Activity className="h-4 w-4 mx-auto mb-1" />
-                <div className="text-xs">Reputation</div>
-              </div>
-
-              <div
-                className={`p-3 rounded-lg transition-all duration-500 ${currentStep >= 6
-                    ? "bg-primary/20 text-primary"
-                    : "bg-muted/20"
-                  }`}
-              >
-                <Shield className="h-4 w-4 mx-auto mb-1" />
-                <div className="text-xs">Score</div>
+              <Wand2 className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <h4 className="text-xs font-semibold text-warning uppercase tracking-wider">
+                  Smart Suggestions
+                </h4>
+                {suggestions.map((suggestion, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground font-mono">{suggestion}</span>
+                    {suggestion.includes("Did you mean:") && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => applySuggestion(suggestion)}
+                        className="ml-3 h-7 text-xs border-warning/30 text-warning hover:bg-warning/10"
+                      >
+                        Apply
+                      </Button>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        </Card>
+        )}
+      </div>
+
+      {/* Verification progress */}
+      {isVerifying && (
+        <div className="space-y-5 p-5 rounded-xl border border-border/50 bg-muted/10 animate-fade-in">
+          {/* Current step */}
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{
+                background: "hsl(185 95% 55% / 0.15)",
+                border: "1px solid hsl(185 95% 55% / 0.3)",
+              }}
+            >
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-foreground font-mono">
+                {steps[currentStep]?.label ?? "Processing..."}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Step {currentStep + 1} of {steps.length}
+              </div>
+            </div>
+            <div className="ml-auto text-sm font-mono text-primary font-bold">
+              {Math.round(progress)}%
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="relative">
+            <Progress
+              value={progress}
+              className="h-2 bg-muted/40"
+            />
+            <div
+              className="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
+              style={{
+                width: `${progress}%`,
+                background: "linear-gradient(90deg, hsl(185 95% 55%), hsl(185 95% 70%))",
+                boxShadow: "0 0 10px hsl(185 95% 55% / 0.5)",
+                maxWidth: "100%",
+              }}
+            />
+          </div>
+
+          {/* Step indicators */}
+          <div className="grid grid-cols-7 gap-1">
+            {steps.map((step, i) => {
+              const Icon = step.icon;
+              const isDone = i < currentStep;
+              const isCurrent = i === currentStep;
+              return (
+                <div
+                  key={i}
+                  className="flex flex-col items-center gap-1"
+                  aria-label={step.label}
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-500"
+                    style={{
+                      background: isDone
+                        ? "hsl(152 72% 45% / 0.15)"
+                        : isCurrent
+                          ? "hsl(185 95% 55% / 0.2)"
+                          : "hsl(var(--muted) / 0.3)",
+                      border: isDone
+                        ? "1px solid hsl(152 72% 45% / 0.3)"
+                        : isCurrent
+                          ? "1px solid hsl(185 95% 55% / 0.5)"
+                          : "1px solid transparent",
+                      boxShadow: isCurrent ? "0 0 12px hsl(185 95% 55% / 0.3)" : "none",
+                    }}
+                  >
+                    <Icon
+                      className="h-3.5 w-3.5 transition-all duration-500"
+                      style={{
+                        color: isDone
+                          ? "hsl(152 72% 45%)"
+                          : isCurrent
+                            ? "hsl(185 95% 55%)"
+                            : "hsl(var(--muted-foreground))",
+                      }}
+                    />
+                  </div>
+                  <span
+                    className="text-[9px] text-center leading-tight hidden sm:block"
+                    style={{
+                      color: isDone
+                        ? "hsl(152 72% 45%)"
+                        : isCurrent
+                          ? "hsl(185 95% 55%)"
+                          : "hsl(var(--muted-foreground))",
+                    }}
+                  >
+                    {step.label.split(" ")[0]}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Empty state hint */}
+      {!isVerifying && !email && (
+        <div className="flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground/50 font-mono">
+          <AtSign className="w-3 h-3" />
+          <span>Enter an email address above to begin verification</span>
+        </div>
       )}
     </div>
   );

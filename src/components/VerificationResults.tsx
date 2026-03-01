@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -10,29 +9,90 @@ import {
   AlertTriangle,
   Search,
   Download,
-  Filter,
   Shield,
   Activity,
   Zap,
   Mail,
   Users,
   AtSign,
+  Clock,
+  Filter,
+  TrendingUp,
 } from "lucide-react";
 
 interface VerificationResultsProps {
   results: EmailResult[];
 }
 
+type FilterStatus = "all" | "valid" | "risky" | "invalid";
+
+function ScoreRing({ score, size = 48 }: { score: number; size?: number }) {
+  const r = (size - 6) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = (score / 100) * circ;
+  const color =
+    score >= 70 ? "hsl(152 72% 45%)" : score >= 40 ? "hsl(38 98% 58%)" : "hsl(355 85% 58%)";
+
+  return (
+    <svg width={size} height={size} className="rotate-[-90deg]">
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth={3} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth={3}
+        strokeLinecap="round"
+        strokeDasharray={`${dash} ${circ}`}
+        className="score-ring"
+        style={{ filter: `drop-shadow(0 0 4px ${color})` }}
+      />
+    </svg>
+  );
+}
+
+function StatusBadge({ status }: { status: EmailResult["status"] }) {
+  const config = {
+    valid: { label: "VALID", bg: "hsl(152 72% 45% / 0.12)", color: "hsl(152 72% 50%)", border: "hsl(152 72% 45% / 0.3)" },
+    invalid: { label: "INVALID", bg: "hsl(355 85% 58% / 0.12)", color: "hsl(355 85% 62%)", border: "hsl(355 85% 58% / 0.3)" },
+    risky: { label: "RISKY", bg: "hsl(38 98% 58% / 0.12)", color: "hsl(38 98% 62%)", border: "hsl(38 98% 58% / 0.3)" },
+    checking: { label: "CHECKING", bg: "hsl(185 95% 55% / 0.12)", color: "hsl(185 95% 55%)", border: "hsl(185 95% 55% / 0.3)" },
+    error: { label: "ERROR", bg: "hsl(355 85% 58% / 0.12)", color: "hsl(355 85% 62%)", border: "hsl(355 85% 58% / 0.3)" },
+  };
+  const c = config[status] ?? config.error;
+  return (
+    <span
+      className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold font-mono tracking-widest"
+      style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}
+    >
+      {c.label}
+    </span>
+  );
+}
+
+function FactorDot({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span
+        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+        style={{
+          background: ok ? "hsl(152 72% 45%)" : "hsl(355 85% 58%)",
+          boxShadow: ok ? "0 0 4px hsl(152 72% 45% / 0.6)" : "none",
+        }}
+      />
+      <span className="text-[10px] font-mono text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
 export const VerificationResults = ({ results }: VerificationResultsProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
 
-  const filteredResults = results.filter((result) => {
-    const matchesSearch = result.email
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesFilter =
-      statusFilter === "all" || result.status === statusFilter;
+  const filteredResults = results.filter((r) => {
+    const matchesSearch = r.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = statusFilter === "all" || r.status === statusFilter;
     return matchesSearch && matchesFilter;
   });
 
@@ -42,37 +102,18 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
     invalid: results.filter((r) => r.status === "invalid").length,
     risky: results.filter((r) => r.status === "risky").length,
   };
-
-  const getStatusIcon = (status: EmailResult["status"]) => {
-    switch (status) {
-      case "valid":
-        return <CheckCircle className="h-4 w-4 text-success" />;
-      case "invalid":
-        return <XCircle className="h-4 w-4 text-destructive" />;
-      case "risky":
-        return <AlertTriangle className="h-4 w-4 text-warning" />;
-      default:
-        return null;
-    }
-  };
+  const pct = (n: number) => (stats.total > 0 ? Math.round((n / stats.total) * 100) : 0);
 
   const downloadResults = (filterStatus?: string) => {
-    const dataToDownload = filterStatus
+    const data = filterStatus
       ? results.filter((r) => r.status === filterStatus)
       : filteredResults;
 
     const csv = [
       "Email,Status,Reason,Score,Format,Domain,MX,SMTP,Reputation,Deliverability,SPF,DKIM,DMARC,Blacklisted,Timestamp",
-      ...dataToDownload.map(
-        (result) =>
-          `${result.email},${result.status},${result.reason},${result.score || 0
-          },${result.factors?.format || false},${result.factors?.domain || false
-          },${result.factors?.mx || false},${result.factors?.smtp || false},${result.factors?.reputation || 0
-          },${result.factors?.deliverability || 0},${result.domainHealth?.spf || false
-          },${result.domainHealth?.dkim || false},${result.domainHealth?.dmarc || false
-          },${result.domainHealth?.blacklisted || false},${new Date(
-            result.timestamp
-          ).toISOString()}`
+      ...data.map(
+        (r) =>
+          `${r.email},${r.status},${r.reason},${r.score || 0},${r.factors?.format || false},${r.factors?.domain || false},${r.factors?.mx || false},${r.factors?.smtp || false},${r.factors?.reputation || 0},${r.factors?.deliverability || 0},${r.domainHealth?.spf || false},${r.domainHealth?.dkim || false},${r.domainHealth?.dmarc || false},${r.domainHealth?.blacklisted || false},${new Date(r.timestamp).toISOString()}`
       ),
     ].join("\n");
 
@@ -86,289 +127,278 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="glass-card p-4 text-center">
-          <div className="text-2xl font-bold text-foreground">
-            {stats.total}
-          </div>
-          <div className="text-sm text-muted-foreground">Total</div>
-        </Card>
-
-        <Card
-          className="glass-card p-4 text-center cursor-pointer hover:scale-105 transition-transform"
-          onClick={() => downloadResults("valid")}
-        >
-          <div className="text-2xl font-bold text-success">{stats.valid}</div>
-          <div className="text-sm text-muted-foreground">Valid</div>
-          <Download className="h-3 w-3 mx-auto mt-1 opacity-60" />
-        </Card>
-
-        <Card
-          className="glass-card p-4 text-center cursor-pointer hover:scale-105 transition-transform"
-          onClick={() => downloadResults("risky")}
-        >
-          <div className="text-2xl font-bold text-warning">{stats.risky}</div>
-          <div className="text-sm text-muted-foreground">Risky</div>
-          <Download className="h-3 w-3 mx-auto mt-1 opacity-60" />
-        </Card>
-
-        <Card
-          className="glass-card p-4 text-center cursor-pointer hover:scale-105 transition-transform"
-          onClick={() => downloadResults("invalid")}
-        >
-          <div className="text-2xl font-bold text-destructive">
-            {stats.invalid}
-          </div>
-          <div className="text-sm text-muted-foreground">Invalid</div>
-          <Download className="h-3 w-3 mx-auto mt-1 opacity-60" />
-        </Card>
+    <div className="space-y-5">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          {
+            label: "Total",
+            value: stats.total,
+            icon: TrendingUp,
+            hsl: "185 95% 55%",
+            pct: 100,
+            onClick: undefined,
+          },
+          {
+            label: "Valid",
+            value: stats.valid,
+            icon: CheckCircle,
+            hsl: "152 72% 45%",
+            pct: pct(stats.valid),
+            onClick: () => downloadResults("valid"),
+          },
+          {
+            label: "Risky",
+            value: stats.risky,
+            icon: AlertTriangle,
+            hsl: "38 98% 58%",
+            pct: pct(stats.risky),
+            onClick: () => downloadResults("risky"),
+          },
+          {
+            label: "Invalid",
+            value: stats.invalid,
+            icon: XCircle,
+            hsl: "355 85% 58%",
+            pct: pct(stats.invalid),
+            onClick: () => downloadResults("invalid"),
+          },
+        ].map(({ label, value, icon: Icon, hsl, onClick }) => (
+          <button
+            key={label}
+            onClick={onClick}
+            disabled={!onClick}
+            className="group text-left p-4 rounded-xl border border-border/50 bg-card/40 hover:border-primary/30 transition-all duration-300 disabled:cursor-default"
+            style={{ boxShadow: "0 4px 16px -4px hsl(222 20% 2% / 0.5)" }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ background: `hsl(${hsl} / 0.15)`, border: `1px solid hsl(${hsl} / 0.25)` }}
+              >
+                <Icon className="w-4 h-4" style={{ color: `hsl(${hsl})` }} />
+              </div>
+              {onClick && (
+                <Download className="w-3 h-3 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+              )}
+            </div>
+            <div
+              className="text-3xl font-extrabold font-mono mb-0.5"
+              style={{ color: `hsl(${hsl})`, fontFamily: "'Syne', sans-serif" }}
+            >
+              {value}
+            </div>
+            <div className="text-xs text-muted-foreground">{label}</div>
+          </button>
+        ))}
       </div>
 
       {/* Filters */}
-      <Card className="glass-card p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search emails..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              variant={statusFilter === "all" ? "default" : "outline"}
-              onClick={() => setStatusFilter("all")}
-              size="sm"
-            >
-              <Filter className="mr-1 h-3 w-3" />
-              All
-            </Button>
-
-            <Button
-              variant={statusFilter === "valid" ? "default" : "outline"}
-              onClick={() => setStatusFilter("valid")}
-              size="sm"
-              className={statusFilter === "valid" ? "btn-success" : ""}
-            >
-              Valid
-            </Button>
-
-            <Button
-              variant={statusFilter === "risky" ? "default" : "outline"}
-              onClick={() => setStatusFilter("risky")}
-              size="sm"
-            >
-              Risky
-            </Button>
-
-            <Button
-              variant={statusFilter === "invalid" ? "default" : "outline"}
-              onClick={() => setStatusFilter("invalid")}
-              size="sm"
-            >
-              Invalid
-            </Button>
-          </div>
-
-          <Button onClick={() => downloadResults()} variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Export All
-          </Button>
+      <div
+        className="flex flex-col sm:flex-row gap-3 p-4 rounded-xl border border-border/50 bg-muted/10"
+      >
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+          <Input
+            id="results-search"
+            placeholder="Filter emails..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 h-9 bg-input/40 border-border/40 text-sm font-mono"
+          />
         </div>
-      </Card>
 
-      {/* Results List */}
-      <Card className="glass-card">
-        <div className="max-h-96 overflow-y-auto">
+        <div className="flex items-center gap-2">
+          <Filter className="w-3.5 h-3.5 text-muted-foreground/60" />
+          {(["all", "valid", "risky", "invalid"] as FilterStatus[]).map((f) => (
+            <button
+              key={f}
+              onClick={() => setStatusFilter(f)}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold font-mono transition-all duration-200"
+              style={{
+                background:
+                  statusFilter === f ? "hsl(185 95% 55%)" : "hsl(var(--muted) / 0.3)",
+                color:
+                  statusFilter === f ? "hsl(222 20% 5%)" : "hsl(var(--muted-foreground))",
+                border: statusFilter === f
+                  ? "1px solid hsl(185 95% 55%)"
+                  : "1px solid hsl(var(--border) / 0.5)",
+              }}
+            >
+              {f.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        <Button
+          onClick={() => downloadResults()}
+          variant="outline"
+          size="sm"
+          className="border-border/50 hover:border-primary/40 hover:text-primary transition-all text-xs font-mono h-9"
+        >
+          <Download className="mr-1.5 h-3.5 w-3.5" />
+          Export CSV
+        </Button>
+      </div>
+
+      {/* Results list */}
+      <div
+        className="rounded-xl border border-border/50 overflow-hidden"
+        style={{ background: "hsl(var(--card) / 0.3)" }}
+      >
+        <div className="max-h-[480px] overflow-y-auto">
           {filteredResults.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              {searchTerm || statusFilter !== "all"
-                ? "No results match your filters"
-                : "No verification results yet"}
+            <div className="p-12 text-center">
+              <Mail className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground/60 font-mono">
+                {searchTerm || statusFilter !== "all"
+                  ? "No results match your filters"
+                  : "No verification results yet"}
+              </p>
             </div>
           ) : (
-            <div className="divide-y divide-border">
-              {filteredResults.map((result) => (
+            <div className="divide-y divide-border/30">
+              {filteredResults.map((result, idx) => (
                 <div
                   key={result.id}
-                  className="p-4 hover:bg-muted/10 transition-colors animate-slide-up"
+                  className="group p-4 hover:bg-primary/4 transition-colors animate-slide-up"
+                  style={{ animationDelay: `${idx * 30}ms`, animationFillMode: "backwards" }}
                 >
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-4">
-                      {getStatusIcon(result.status)}
-
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">
-                          {result.email}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {result.reason}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        {result.score !== undefined && (
-                          <div className="flex items-center gap-1">
-                            <Shield className="h-3 w-3 text-primary" />
-                            <span className="text-sm font-medium">
-                              {result.score}/100
-                            </span>
-                          </div>
-                        )}
-
-                        <Badge
-                          className={`border text-xs ${result.status === 'valid'
-                              ? 'bg-green-100 text-green-800 border-green-300'
-                              : result.status === 'risky'
-                                ? 'bg-orange-100 text-orange-800 border-orange-300'
-                                : result.status === 'invalid'
-                                  ? 'bg-red-100 text-red-800 border-red-300'
-                                  : 'bg-gray-100 text-gray-800 border-gray-300'
-                            }`}
+                  {/* Main row */}
+                  <div className="flex items-center gap-4">
+                    {/* Score ring */}
+                    {result.score !== undefined && result.score > 0 && (
+                      <div className="relative flex-shrink-0">
+                        <ScoreRing score={result.score} size={44} />
+                        <div
+                          className="absolute inset-0 flex items-center justify-center text-[9px] font-bold font-mono"
+                          style={{
+                            color:
+                              result.score >= 70
+                                ? "hsl(152 72% 50%)"
+                                : result.score >= 40
+                                  ? "hsl(38 98% 62%)"
+                                  : "hsl(355 85% 62%)",
+                          }}
                         >
-                          {result.status.toUpperCase()}
-                        </Badge>
-
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(result.timestamp).toLocaleTimeString()}
+                          {result.score}
                         </div>
-                      </div>
-                    </div>
-
-                    {/* Advanced Details */}
-                    {result.factors && (
-                      <div className="pl-8 space-y-2">
-                        {/* Verification Factors */}
-                        <div className="flex items-center gap-4 text-xs">
-                          <div
-                            className={`flex items-center gap-1 ${result.factors.format
-                                ? "text-success"
-                                : "text-destructive"
-                              }`}
-                          >
-                            <CheckCircle className="h-3 w-3" />
-                            Format
-                          </div>
-                          <div
-                            className={`flex items-center gap-1 ${result.factors.domain
-                                ? "text-success"
-                                : "text-destructive"
-                              }`}
-                          >
-                            <CheckCircle className="h-3 w-3" />
-                            Domain
-                          </div>
-                          <div
-                            className={`flex items-center gap-1 ${result.factors.mx
-                                ? "text-success"
-                                : "text-destructive"
-                              }`}
-                          >
-                            <CheckCircle className="h-3 w-3" />
-                            MX
-                          </div>
-                          <div
-                            className={`flex items-center gap-1 ${result.factors.smtp
-                                ? "text-success"
-                                : "text-destructive"
-                              }`}
-                          >
-                            <Zap className="h-3 w-3" />
-                            SMTP
-                          </div>
-                        </div>
-
-                        {/* Domain Health */}
-                        {result.domainHealth && (
-                          <div className="flex items-center gap-4 text-xs">
-                            <div
-                              className={`flex items-center gap-1 ${result.domainHealth.spf
-                                  ? "text-success"
-                                  : "text-muted-foreground"
-                                }`}
-                            >
-                              SPF: {result.domainHealth.spf ? "✓" : "✗"}
-                            </div>
-                            <div
-                              className={`flex items-center gap-1 ${result.domainHealth.dkim
-                                  ? "text-success"
-                                  : "text-muted-foreground"
-                                }`}
-                            >
-                              DKIM: {result.domainHealth.dkim ? "✓" : "✗"}
-                            </div>
-                            <div
-                              className={`flex items-center gap-1 ${result.domainHealth.dmarc
-                                  ? "text-success"
-                                  : "text-muted-foreground"
-                                }`}
-                            >
-                              DMARC: {result.domainHealth.dmarc ? "✓" : "✗"}
-                            </div>
-                            {result.domainHealth.blacklisted && (
-                              <Badge variant="destructive" className="text-xs">
-                                Blacklisted
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Strict Mode Additional Checks */}
-                        {(result.normalized_email || result.strictMode) && (
-                          <div className="flex items-center gap-4 text-xs">
-                            {result.strictMode && (
-                              <Badge variant="destructive" className="text-xs">
-                                Strict Mode
-                              </Badge>
-                            )}
-                            {result.normalized_email && (
-                              <div className="flex items-center gap-1 text-muted-foreground">
-                                <Mail className="h-3 w-3" />
-                                Normalized: {result.normalized_email}
-                              </div>
-                            )}
-                            {result.is_role_based && (
-                              <Badge variant="outline" className="text-xs">
-                                <Users className="h-2 w-2 mr-1" />
-                                Role-based
-                              </Badge>
-                            )}
-                            {result.is_catch_all && (
-                              <Badge variant="outline" className="text-xs">
-                                <AtSign className="h-2 w-2 mr-1" />
-                                Catch-all
-                              </Badge>
-                            )}
-                            {result.has_plus_alias && (
-                              <Badge variant="outline" className="text-xs">
-                                <span className="mr-1">+</span>
-                                Plus alias
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Suggestions */}
-                        {result.suggestions &&
-                          result.suggestions.length > 0 && (
-                            <div className="text-xs text-warning">
-                              💡 {result.suggestions[0]}
-                            </div>
-                          )}
                       </div>
                     )}
+
+                    {/* Email + reason */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-mono text-sm font-medium text-foreground truncate">
+                          {result.email}
+                        </span>
+                        {result.strictMode && (
+                          <Badge className="bg-destructive/15 text-destructive border border-destructive/25 text-[9px] font-mono px-1.5 h-4">
+                            STRICT
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{result.reason}</p>
+                    </div>
+
+                    {/* Status & time */}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <StatusBadge status={result.status} />
+                      <div className="hidden sm:flex items-center gap-1 text-muted-foreground/50">
+                        <Clock className="w-3 h-3" />
+                        <span className="text-[10px] font-mono">
+                          {new Date(result.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Details row */}
+                  {result.factors && (
+                    <div className="mt-3 pl-14 flex flex-wrap gap-4">
+                      {/* Verification factors */}
+                      <div className="flex items-center gap-3">
+                        <FactorDot ok={result.factors.format} label="Format" />
+                        <FactorDot ok={result.factors.domain} label="Domain" />
+                        <FactorDot ok={result.factors.mx} label="MX" />
+                        <FactorDot ok={result.factors.smtp} label="SMTP" />
+                      </div>
+
+                      {/* Domain health */}
+                      {result.domainHealth && (
+                        <div className="flex items-center gap-3">
+                          <FactorDot ok={result.domainHealth.spf} label="SPF" />
+                          <FactorDot ok={result.domainHealth.dkim} label="DKIM" />
+                          <FactorDot ok={result.domainHealth.dmarc} label="DMARC" />
+                          {result.domainHealth.blacklisted && (
+                            <Badge className="bg-destructive/15 text-destructive border border-destructive/25 text-[9px] h-4 px-1.5 font-mono">
+                              BLACKLISTED
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Strict mode extras */}
+                      {(result.is_role_based || result.is_catch_all || result.has_plus_alias) && (
+                        <div className="flex items-center gap-2">
+                          {result.is_role_based && (
+                            <Badge variant="outline" className="text-[9px] h-4 px-1.5 font-mono border-border/50">
+                              <Users className="w-2 h-2 mr-1" />
+                              ROLE
+                            </Badge>
+                          )}
+                          {result.is_catch_all && (
+                            <Badge variant="outline" className="text-[9px] h-4 px-1.5 font-mono border-border/50">
+                              <AtSign className="w-2 h-2 mr-1" />
+                              CATCH-ALL
+                            </Badge>
+                          )}
+                          {result.has_plus_alias && (
+                            <Badge variant="outline" className="text-[9px] h-4 px-1.5 font-mono border-border/50">
+                              +ALIAS
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Normalized email */}
+                      {result.normalized_email && result.normalized_email !== result.email && (
+                        <div className="flex items-center gap-1 text-muted-foreground/50">
+                          <Mail className="w-3 h-3" />
+                          <span className="text-[10px] font-mono">{result.normalized_email}</span>
+                        </div>
+                      )}
+
+                      {/* Suggestion */}
+                      {result.suggestions && result.suggestions.length > 0 && (
+                        <div className="flex items-center gap-1 text-warning/70">
+                          <Zap className="w-3 h-3" />
+                          <span className="text-[10px] font-mono">{result.suggestions[0]}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
         </div>
-      </Card>
+
+        {/* Footer */}
+        {filteredResults.length > 0 && (
+          <div className="px-4 py-2.5 border-t border-border/30 flex items-center justify-between bg-muted/5">
+            <span className="text-[10px] font-mono text-muted-foreground/50">
+              Showing {filteredResults.length} of {results.length} results
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Activity className="w-3 h-3 text-muted-foreground/40" />
+              <span className="text-[10px] font-mono text-muted-foreground/50">
+                {pct(stats.valid)}% deliverable
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

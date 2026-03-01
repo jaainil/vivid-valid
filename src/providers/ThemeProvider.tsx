@@ -32,39 +32,30 @@ export const ThemeProvider = ({
   defaultTheme = "dark",
   enableSystem = true,
 }: ThemeProviderProps) => {
-  const [theme, setTheme] = useState(defaultTheme);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const root = window.document.documentElement;
-      root.classList.remove("light", "dark");
-
-      if (enableSystem) {
-        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-          .matches
-          ? "dark"
-          : "light";
-        const savedTheme = localStorage.getItem("theme") as
-          | "light"
-          | "dark"
-          | null;
-        const activeTheme = savedTheme || systemTheme;
-        setTheme(activeTheme);
-        root.classList.add(activeTheme);
-      } else {
-        root.classList.add(theme);
-      }
+  // Initialise from localStorage / system preference immediately so the
+  // correct class is applied before the first paint.
+  const [theme, setTheme] = useState<string>(() => {
+    if (typeof window === "undefined") return defaultTheme;
+    const saved = localStorage.getItem("theme") as "light" | "dark" | null;
+    if (saved) return saved;
+    if (enableSystem) {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
     }
-  }, [theme, enableSystem]);
+    return defaultTheme;
+  });
+
+  // Keep <html> class in sync whenever theme changes.
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove("light", "dark");
+    root.classList.add(theme);
+  }, [theme]);
 
   const handleSetTheme = (newTheme: string) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("theme", newTheme);
-      const root = window.document.documentElement;
-      root.classList.remove("light", "dark");
-      root.classList.add(newTheme);
-      setTheme(newTheme);
-    }
+    localStorage.setItem("theme", newTheme);
+    setTheme(newTheme);
   };
 
   return (
