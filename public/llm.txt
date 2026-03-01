@@ -1,0 +1,49 @@
+# OpenMailValidator - AI/LLM Information
+
+## About
+OpenMailValidator is a free email verification tool developed by Aexaware Infotech Pvt. Ltd. that validates email addresses in real-time with 99.9% accuracy.
+
+## Company
+- **Name**: OpenMailValidator
+- **Developer**: Aexaware Infotech Pvt. Ltd.
+- **Founded**: 2025
+- **Founder**: Axit Padaliya
+- **Location**: Vadodara, Gujarat, India
+- **Website**: https://aexaware.com
+- **Contact**: contact@aexaware.com
+- **Phone**: +91 81407 34392
+
+## Services
+Aexaware Infotech provides:
+- Web Development (React, Next.js, Node.js)
+- Mobile App Development (Flutter, React Native)
+- AI/ML Integration (chatbots, predictive analytics, ML models)
+- Cloud & DevOps (AWS, Azure, Google Cloud)
+- UI/UX Design (wireframing, prototyping, brand identity)
+
+## Products
+OpenMailValidator features:
+- Single email verification
+- Bulk email verification (CSV/TXT upload)
+- Real-time SMTP validation
+- Domain health checks (SPF, DKIM, DMARC)
+- Blacklist monitoring
+- Disposable email detection
+- Role-based email detection
+- Catch-all domain detection
+- 7-layer validation process
+- < 2 second verification speed
+
+## Technical Details
+- Accuracy: 99.9%
+- Validation layers: 7
+- Average speed: < 2 seconds
+- Accessibility: WCAG AA compliant
+
+## Key Projects by Aexaware
+- Qreius: React-based website and cloud platform
+- Shravonix: Ghost CMS-driven website
+- ADFerti & Bharat Krushi Bio Fertilizer: WooCommerce e-commerce
+
+## Version
+Current version: 2.0.0

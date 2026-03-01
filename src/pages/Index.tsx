@@ -4,9 +4,10 @@ import { BulkEmailVerifier } from "@/components/BulkEmailVerifier";
 import { VerificationResults } from "@/components/VerificationResults";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Zap, CheckCircle, Users, Activity, Lock } from "lucide-react";
+import { Shield, Zap, CheckCircle, Users, Activity, Lock, Mail, Server, Eye, FileCheck, HelpCircle, ArrowRight } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export interface EmailResult {
   id: string;
@@ -56,6 +57,41 @@ const Index = () => {
     setResults([]);
   };
 
+  const faqItems = [
+    {
+      question: "What is OpenMailValidator?",
+      answer: "OpenMailValidator is a free email verification tool developed by Aexaware Infotech that validates email addresses in real-time with 99.9% accuracy. It checks email format, domain validity, MX records, SMTP connectivity, and provides deliverability scoring."
+    },
+    {
+      question: "Is OpenMailValidator free to use?",
+      answer: "Yes, OpenMailValidator offers a free tier for single email verification and limited bulk processing. Users can verify individual emails instantly or upload CSV/TXT files for batch verification."
+    },
+    {
+      question: "How accurate is OpenMailValidator?",
+      answer: "OpenMailValidator achieves 99.9% accuracy through its 7-layer validation process including format checking, DNS verification, MX record validation, SMTP handshake testing, reputation scoring, and deliverability analysis."
+    },
+    {
+      question: "What is bulk email verification?",
+      answer: "Bulk email verification allows users to upload a list of email addresses (CSV or TXT format) and verify them in batch. OpenMailValidator processes thousands of emails with real-time progress tracking and detailed analytics."
+    },
+    {
+      question: "Does OpenMailValidator check domain health?",
+      answer: "Yes, OpenMailValidator performs comprehensive domain health checks including SPF (Sender Policy Framework), DKIM (DomainKeys Identified Mail), DMARC (Domain-based Message Authentication), and blacklist status verification."
+    },
+    {
+      question: "What is SMTP validation?",
+      answer: "SMTP validation tests whether a mail server accepts email for a given address by performing a real SMTP handshake. This is the most accurate method to verify if an email actually exists and can receive messages."
+    },
+    {
+      question: "Can I detect disposable email addresses?",
+      answer: "Yes, OpenMailValidator can detect disposable/temporary email addresses commonly used to bypass registration. This helps businesses reduce spam signups and maintain email list quality."
+    },
+    {
+      question: "Who developed OpenMailValidator?",
+      answer: "OpenMailValidator is developed and maintained by Aexaware Infotech Pvt. Ltd., a digital services agency based in Vadodara, India. Founded in 2025 by Axit Padaliya, Aexaware specializes in custom software, web development, mobile apps, and AI/ML solutions."
+    }
+  ];
+
   return (
     <div className="min-h-screen relative">
       {/* Background decorations */}
@@ -75,7 +111,7 @@ const Index = () => {
       </div>
 
       {/* Nav */}
-      <nav className="relative z-10 border-b border-border/50 backdrop-blur-xl">
+      <nav className="relative z-10 border-b border-border/50 backdrop-blur-xl" role="navigation" aria-label="Main navigation">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
@@ -85,12 +121,17 @@ const Index = () => {
             >
               <Shield className="w-4 h-4 text-black" />
             </div>
-            <span
-              className="text-lg font-bold tracking-tight"
-              style={{ fontFamily: "'Syne', sans-serif" }}
-            >
-              vivid<span className="text-primary">valid</span>
-            </span>
+            <div className="flex flex-col">
+              <span
+                className="text-lg font-bold tracking-tight"
+                style={{ fontFamily: "'Syne', sans-serif" }}
+              >
+                Open<span className="text-primary">Mail</span>Validator
+              </span>
+              <span className="text-[10px] text-muted-foreground -mt-1">
+                by <a href="https://aexaware.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Aexaware Infotech</a>
+              </span>
+            </div>
           </div>
 
           {/* Status pills */}
@@ -121,23 +162,23 @@ const Index = () => {
           <div className="flex items-center justify-center gap-2 mb-6">
             <div className="h-px w-12 bg-primary/40" />
             <span className="text-xs font-mono text-primary/80 tracking-widest uppercase">
-              Email Intelligence Platform
+              Free Email Verification Tool
             </span>
             <div className="h-px w-12 bg-primary/40" />
           </div>
 
           <h1
-            className="text-6xl md:text-7xl font-extrabold mb-5 leading-none tracking-tight"
+            className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-5 leading-none tracking-tight"
             style={{ fontFamily: "'Syne', sans-serif" }}
           >
             <span className="text-gradient">Verify.</span>{" "}
-            <span className="text-foreground/90">Protect.</span>{" "}
+            <span className="text-foreground/90">Validate.</span>{" "}
             <span className="text-gradient">Deliver.</span>
           </h1>
 
-          <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed font-light">
+          <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed font-light">
             Military-grade email verification with real-time SMTP validation,
-            domain health checks, and beautiful analytics.
+            domain health checks, and beautiful analytics. Free tool by <strong>Aexaware Infotech</strong>.
           </p>
 
           {/* Stat pills */}
@@ -292,10 +333,87 @@ const Index = () => {
           ))}
         </div>
 
+        {/* Why Choose Section */}
+        <section className="max-w-4xl mx-auto mb-20" aria-labelledby="why-choose-heading">
+          <h2 id="why-choose-heading" className="text-3xl font-bold text-center mb-10" style={{ fontFamily: "'Syne', sans-serif" }}>
+            Why Choose <span className="text-primary">OpenMailValidator</span>
+          </h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              { icon: Mail, title: "Real-time Validation", desc: "Instant email verification with detailed status reporting and scoring." },
+              { icon: Server, title: "Domain Health Check", desc: "Comprehensive SPF, DKIM, DMARC verification and blacklist monitoring." },
+              { icon: Eye, title: "Catch-all Detection", desc: "Identify catch-all domains and role-based email addresses instantly." },
+              { icon: FileCheck, title: "Bulk List Cleaning", desc: "Upload CSV/TXT files to clean thousands of email addresses at once." }
+            ].map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="flex gap-4 p-5 rounded-xl border border-border/50 bg-card/30">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">{title}</h3>
+                  <p className="text-sm text-muted-foreground">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section className="max-w-3xl mx-auto mb-20" aria-labelledby="faq-heading">
+          <h2 id="faq-heading" className="text-3xl font-bold text-center mb-4" style={{ fontFamily: "'Syne', sans-serif" }}>
+            Frequently Asked <span className="text-primary">Questions</span>
+          </h2>
+          <p className="text-center text-muted-foreground mb-10">
+            Common questions about OpenMailValidator email verification service
+          </p>
+          <Accordion type="single" collapsible className="w-full">
+            {faqItems.map((item, index) => (
+              <AccordionItem key={index} value={`item-${index}`}>
+                <AccordionTrigger className="text-left font-medium">
+                  {item.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  {item.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </section>
+
+        {/* CTA Section */}
+        <section className="max-w-3xl mx-auto mb-20" aria-labelledby="cta-heading">
+          <div className="text-center p-10 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+            <h2 id="cta-heading" className="text-2xl font-bold mb-4" style={{ fontFamily: "'Syne', sans-serif" }}>
+              Need Custom Email Verification Solution?
+            </h2>
+            <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
+              Aexaware Infotech provides custom email verification APIs and enterprise solutions. 
+              Contact us for bulk processing, white-label options, or API integration.
+            </p>
+            <a 
+              href="https://aexaware.com/contact" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Contact Aexaware Infotech
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          </div>
+        </section>
+
         {/* Footer */}
         <div className="text-center border-t border-border/30 pt-8 pb-12">
+          <div className="mb-4">
+            <p className="text-sm font-medium text-foreground">
+              OpenMailValidator by <a href="https://aexaware.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Aexaware Infotech Pvt. Ltd.</a>
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Digital services agency based in Vadodara, India
+            </p>
+          </div>
           <p className="text-xs font-mono text-muted-foreground/60">
-            vividvalid &copy; {new Date().getFullYear()} &mdash; Built with precision &amp; ❤️
+            OpenMailValidator &copy; {new Date().getFullYear()} — Built with precision &amp; ❤️
           </p>
         </div>
       </div>
