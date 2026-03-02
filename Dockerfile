@@ -24,6 +24,8 @@ RUN apk add --no-cache nginx && \
 COPY --from=frontend /app/dist /var/www/html
 COPY --from=backend /app /var/www/backend
 COPY nginx.conf /etc/nginx/nginx.conf
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
 RUN rm -rf /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp /var/cache/nginx/fastcgi_temp /var/cache/nginx/uwsgi_temp /var/cache/nginx/scgi_temp
 
@@ -35,4 +37,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
     CMD wget -q --spider http://localhost/health || exit 1
 
-CMD sh -c "export PORT=3000 && node /var/www/backend/server.js & sleep 2 && chown -R root:root /var/lib/nginx && nginx -g 'daemon off;'"
+CMD ["/start.sh"]
+
