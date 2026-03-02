@@ -1,41 +1,37 @@
+# Stage 1: Build React frontend
 FROM node:20-alpine AS frontend
 
 WORKDIR /app
-
-COPY package.json ./
-RUN npm install
-
+COPY package.json package-lock.json* ./
+RUN npm ci
 COPY . .
 RUN npm run build
 
+# Stage 2: Install backend production dependencies
 FROM node:20-alpine AS backend
 
 WORKDIR /app
 COPY backend/package.json backend/package-lock.json* ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 COPY backend/ ./
 
+# Stage 3: Final image — Node.js only, no nginx
 FROM node:20-alpine
 
-RUN apk add --no-cache nginx && \
-    rm -rf /var/cache/apk/* && \
-    mkdir -p /var/cache/nginx /var/log/nginx /run/nginx /var/lib/nginx/tmp /var/lib/nginx/proxy
+WORKDIR /app
 
-COPY --from=frontend /app/dist /var/www/html
-COPY --from=backend /app /var/www/backend
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+# Copy backend
+COPY --from=backend /app ./
 
-RUN rm -rf /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp /var/cache/nginx/fastcgi_temp /var/cache/nginx/uwsgi_temp /var/cache/nginx/scgi_temp
+# Copy built React frontend into backend's public directory
+COPY --from=frontend /app/dist ./public
 
-RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app && \
-    chown -R app:app /var/www/backend
+ENV NODE_ENV=production
+ENV PORT=3000
 
-EXPOSE 80
+EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
-    CMD wget -q --spider http://localhost/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD wget -q --spider http://localhost:3000/health || exit 1
 
-CMD ["/start.sh"]
-
+CMD ["node", "server.js"]

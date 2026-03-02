@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+  import.meta.env.VITE_API_BASE_URL || "/api";
 
 // Add error logging to debug frontend issues
 console.log("Email validator API URL:", API_BASE_URL);
