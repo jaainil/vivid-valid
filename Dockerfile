@@ -32,7 +32,7 @@ RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app && \
 
 EXPOSE 80
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
     CMD wget -q --spider http://localhost/health || exit 1
 
-CMD sh -c "chown -R root:root /var/lib/nginx && node /var/www/backend/server.js & nginx -g 'daemon off;'"
+CMD sh -c "export PORT=3000 && node /var/www/backend/server.js & sleep 2 && chown -R root:root /var/lib/nginx && nginx -g 'daemon off;'"
