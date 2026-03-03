@@ -257,7 +257,7 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
         {suggestions.length > 0 && (
           <div className="p-4 rounded-xl border border-warning/25 bg-warning/8 animate-fade-in">
             <div className="flex items-start gap-3">
-              <Wand2 className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
+              <Wand2 className="h-4 w-4 text-warning mt-0.5 shrink-0" />
               <div className="flex-1 space-y-2">
                 <h4 className="text-xs font-semibold text-warning uppercase tracking-wider">
                   Smart Suggestions
@@ -289,7 +289,7 @@ const SingleEmailVerifier = ({ onResult }: SingleEmailVerifierProps) => {
           {/* Current step */}
           <div className="flex items-center gap-3">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
               style={{
                 background: "hsl(185 95% 55% / 0.15)",
                 border: "1px solid hsl(185 95% 55% / 0.3)",

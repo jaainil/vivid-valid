@@ -34,7 +34,7 @@ function ScoreRing({ score, size = 48 }: { score: number; size?: number }) {
     score >= 70 ? "hsl(152 72% 45%)" : score >= 40 ? "hsl(38 98% 58%)" : "hsl(355 85% 58%)";
 
   return (
-    <svg width={size} height={size} className="rotate-[-90deg]">
+    <svg width={size} height={size} className="-rotate-90">
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth={3} />
       <circle
         cx={size / 2}
@@ -75,7 +75,7 @@ function FactorDot({ ok, label }: { ok: boolean; label: string }) {
   return (
     <div className="flex items-center gap-1.5">
       <span
-        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+        className="w-1.5 h-1.5 rounded-full shrink-0"
         style={{
           background: ok ? "hsl(152 72% 45%)" : "hsl(355 85% 58%)",
           boxShadow: ok ? "0 0 4px hsl(152 72% 45% / 0.6)" : "none",
@@ -268,7 +268,7 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
                   <div className="flex items-center gap-4">
                     {/* Score ring */}
                     {result.score !== undefined && result.score > 0 && (
-                      <div className="relative flex-shrink-0">
+                      <div className="relative shrink-0">
                         <ScoreRing score={result.score} size={44} />
                         <div
                           className="absolute inset-0 flex items-center justify-center text-[9px] font-bold font-mono"
@@ -302,7 +302,7 @@ export const VerificationResults = ({ results }: VerificationResultsProps) => {
                     </div>
 
                     {/* Status & time */}
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-3 shrink-0">
                       <StatusBadge status={result.status} />
                       <div className="hidden sm:flex items-center gap-1 text-muted-foreground/50">
                         <Clock className="w-3 h-3" />

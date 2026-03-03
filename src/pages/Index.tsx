@@ -193,7 +193,7 @@ const Index = () => {
                 key={sub}
                 className="flex items-center gap-3 px-5 py-3 rounded-xl border border-border/60 bg-card/40 backdrop-blur"
               >
-                <Icon className="w-4 h-4 text-primary flex-shrink-0" />
+                <Icon className="w-4 h-4 text-primary shrink-0" />
                 <div className="text-left">
                   <div className="text-sm font-semibold text-foreground font-mono">{label}</div>
                   <div className="text-xs text-muted-foreground">{sub}</div>
@@ -346,7 +346,7 @@ const Index = () => {
               { icon: FileCheck, title: "Bulk List Cleaning", desc: "Upload CSV/TXT files to clean thousands of email addresses at once." }
             ].map(({ icon: Icon, title, desc }) => (
               <div key={title} className="flex gap-4 p-5 rounded-xl border border-border/50 bg-card/30">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <Icon className="w-6 h-6 text-primary" />
                 </div>
                 <div>
@@ -382,7 +382,7 @@ const Index = () => {
 
         {/* CTA Section */}
         <section className="max-w-3xl mx-auto mb-20" aria-labelledby="cta-heading">
-          <div className="text-center p-10 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <div className="text-center p-10 rounded-2xl border border-primary/20 bg-linear-to-br from-primary/5 to-transparent">
             <h2 id="cta-heading" className="text-2xl font-bold mb-4" style={{ fontFamily: "'Syne', sans-serif" }}>
               Need Custom Email Verification Solution?
             </h2>
